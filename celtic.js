@@ -1,11 +1,25 @@
 //@@ Vector is an extensible array
-
+// constructor, elementAt, size
 const WIDTH=500;
 const HEIGHT=500;
 
 const CLOCKWISE=0;
 const ANTICLOCKWISE=1;
 const SQRT_3 = 1.73205080756887729352;
+
+//================================================================================
+// Processing functions and types rewritten
+
+// color
+
+function random(min,max)
+{
+  // returns a random integer between min and max
+}
+
+
+
+//================================================================================
 
 function Edge(n1,n2) {
   var node1, node2;
@@ -93,190 +107,192 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
   var step,nbcol,nbrow; //int
 
   switch (type) {
-    case TYPE_POLAR:
-      var nbp=new_param1; // number of points on each orbit
-      var nbo=new_param2; // number of orbits
-      var os = (new_width<new_height?new_width:new_height)/(2*nbo); // orbit height 
-      var o,p, row, col; // iterator indexes
-      grid = new Array(1+nbp*nbo); // array of Node
-      cx = new_width/2+new_xmin;
-      cy = new_height/2+new_ymin; // centre
-
-      add_node(grid[0]=new Node(cx,cy));
-
-      for (o=0;o<nbo;o++)
-        for (p=0;p<nbp;p++)
-          add_node(grid[1+o*nbp+p]=new Node(cx+(o+1)*os*sin(p*TWO_PI/nbp),
-                                            cy+(o+1)*os*cos(p*TWO_PI/nbp)));
-
-      // generate edges
-      for (o=0;o<nbo;o++)
-        for (p=0;p<nbp;p++) {
-          if (o===0) // link first orbit nodes with centre
-            add_edge(new Edge(grid[1+o*nbp+p],grid[0]));
-          else // link orbit nodes with lower orbit 
-            add_edge(new Edge(grid[1+o*nbp+p],grid[1+(o-1)*nbp+p]));
-          // link along orbit 
-          add_edge(new Edge(grid[1+o*nbp+p], grid[1+o*nbp+(p+1)%nbp]));
+  case TYPE_POLAR:
+    var nbp=new_param1; // number of points on each orbit
+    var nbo=new_param2; // number of orbits
+    var os = (new_width<new_height?new_width:new_height)/(2*nbo); // orbit height 
+    var o,p, row, col; // iterator indexes
+    grid = new Array(1+nbp*nbo); // array of Node
+    cx = new_width/2+new_xmin;
+    cy = new_height/2+new_ymin; // centre
+    
+    add_node(grid[0]=new Node(cx,cy));
+    
+    for (o=0;o<nbo;o++)
+      for (p=0;p<nbp;p++)
+        add_node(grid[1+o*nbp+p]=new Node(cx+(o+1)*os*sin(p*TWO_PI/nbp),
+                                          cy+(o+1)*os*cos(p*TWO_PI/nbp)));
+    
+    // generate edges
+    for (o=0;o<nbo;o++)
+      for (p=0;p<nbp;p++) {
+        if (o===0) // link first orbit nodes with centre
+          add_edge(new Edge(grid[1+o*nbp+p],grid[0]));
+        else // link orbit nodes with lower orbit 
+          add_edge(new Edge(grid[1+o*nbp+p],grid[1+(o-1)*nbp+p]));
+        // link along orbit 
+        add_edge(new Edge(grid[1+o*nbp+p], grid[1+o*nbp+(p+1)%nbp]));
+      }
+    break;
+    
+  case Graph.TYPE_TRIANGLE:
+    var edge_size=npb;
+    var L=(width<height?width:height)/2.0; // circumradius of the triangle
+    cx=(xmin+width/2.0); cy=(ymin+height/2.0); /* centre of the triangle */
+    var p2x=(cx-L*SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
+    var nsteps=floor(3*L/(SQRT_3*edge_size));
+    grid = new Node[(nsteps+1)*(nsteps+1)];
+    
+    // create node grid
+    for (row=0;row<=nsteps;row++)
+      for (col=0;col<=nsteps;col++)
+        if (row+col<=nsteps) {
+          x=p2x+col*L*SQRT_3/nsteps + row*L*SQRT_3/(2*nsteps);
+          y=p2y-row*3*L/(2*nsteps);
+          grid[col+row*(nsteps+1)]=new Node(x, y);
+          add_node(grid[col+row*(nsteps+1)]);
         }
-      break;
-
-    case Graph.TYPE_TRIANGLE:
-      var edge_size=npb;
-      var L=(width<height?width:height)/2.0; // circumradius of the triangle
-      cx=(xmin+width/2.0); cy=(ymin+height/2.0); /* centre of the triangle */
-      var p2x=(cx-L*SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
-      var nsteps=floor(3*L/(SQRT_3*edge_size));
-      grid = new Node[(nsteps+1)*(nsteps+1)];
-
-      // create node grid
-      for (row=0;row<=nsteps;row++)
-        for (col=0;col<=nsteps;col++)
-          if (row+col<=nsteps) {
-            x=p2x+col*L*SQRT_3/nsteps + row*L*SQRT_3/(2*nsteps);
-            y=p2y-row*3*L/(2*nsteps);
-            grid[col+row*(nsteps+1)]=new Node(x, y);
-            add_node(grid[col+row*(nsteps+1)]);
-          }
-
-      // create edges
-      for (row=0;row<nsteps;row++)
-        for (col=0;col<nsteps;col++)
-          if (row+col<nsteps) {
-            // horizontal edges
-            add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
-            // vertical edges
-            add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+1+col*(nsteps+1)]));
-            // diagonal edges
-            add_edge(new Edge(grid[row+1+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
-          }
-      break;
-
-    case Graph.TYPE_KENNICOTT:
-      // make a graph inspired by one of the motifs from the Kennicott bible
-      // square grid of clusters of the shape  /|\
-      //                                       ---
-      //                                       \|/
-      // cluster_size is the length of an edge of a cluster
-       
-      step=new_param1;
-      var cluster_size=new_param2;
-      size=width<height?height:width;
-      nbcol=floor((1+size/step)/2*2); //@@ was (int)((1+size/step)/2*2)
-      nbrow=floor((1+size/step)/2*2);
-      grid = new Node[5*nbrow*nbcol];   /* there are 5 nodes in each cluster */
-
-      /* adjust xmin and xmax so that the grid is centred */
-      xmin+=(width-(nbcol-1)*step)/2;
-      ymin+=(height-(nbrow-1)*step)/2;
-
-      /* create node grid */
-      for (row=0;row<nbrow;row++)
-        for (col=0;col<nbcol;col++) {
-          var ci=5*(row+col*nbrow);
-          x=col*step+xmin;
-          y=row*step+ymin;
-
-          /* create a cluster centred on x,y */
-          grid[ci  ]=new Node(x, y);
-          grid[ci+1]=new Node((x+cluster_size), y);
-          grid[ci+2]=new Node(x, (y-cluster_size));
-          grid[ci+3]=new Node((x-cluster_size), y);
-          grid[ci+4]=new Node(x, (y+cluster_size));
-
-          add_node(grid[ci]);
-          add_node(grid[ci+1]);
-          add_node(grid[ci+2]);
-          add_node(grid[ci+3]);
-          add_node(grid[ci+4]);
-
-          /* internal edges */
-          add_edge(new Edge(grid[ci], grid[ci+1]));
-          add_edge(new Edge(grid[ci], grid[ci+2]));
-          add_edge(new Edge(grid[ci], grid[ci+3]));
-          add_edge(new Edge(grid[ci], grid[ci+4]));
-          add_edge(new Edge(grid[ci+1], grid[ci+2]));
-          add_edge(new Edge(grid[ci+2], grid[ci+3]));
-          add_edge(new Edge(grid[ci+3], grid[ci+4]));
-          add_edge(new Edge(grid[ci+4], grid[ci+1]));
-
+    
+    // create edges
+    for (row=0;row<nsteps;row++)
+      for (col=0;col<nsteps;col++)
+        if (row+col<nsteps) {
+          // horizontal edges
+          add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
+          // vertical edges
+          add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+1+col*(nsteps+1)]));
+          // diagonal edges
+          add_edge(new Edge(grid[row+1+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
         }
-
-      /* create inter-cluster edges */
-      for (var row=0;row<nbrow;row++)
-        for (var col=0;col<nbcol;col++) {
-          if (col!=nbcol-1)
-            /* horizontal edge from edge 1 of cluster (row, col) to edge 3
-             * of cluster (row,col+1) */
-            add_edge(new Edge(grid[5*(row+col*nbrow)+1],grid[5*(row+(col+1)*nbrow)+3]));
-          if (row!=nbrow-1)
-            /* vertical edge from edge 4 of cluster (row, col) to edge 2
-             * of cluster (row+1,col) */
-            add_edge(new Edge(grid[5*(row+col*nbrow)+4], grid[5*(row+1+col*nbrow)+2]));
+    break;
+    
+  case Graph.TYPE_KENNICOTT:
+    // make a graph inspired by one of the motifs from the Kennicott bible
+    // square grid of clusters of the shape  /|\
+    //                                       ---
+    //                                       \|/
+    // cluster_size is the length of an edge of a cluster
+    
+    step=new_param1;
+    var cluster_size=new_param2;
+    size=width<height?height:width;
+    nbcol=floor((1+size/step)/2*2); //@@ was (int)((1+size/step)/2*2)
+    nbrow=floor((1+size/step)/2*2);
+    grid = new Node[5*nbrow*nbcol];   /* there are 5 nodes in each cluster */
+    
+    /* adjust xmin and xmax so that the grid is centred */
+    xmin+=(width-(nbcol-1)*step)/2;
+    ymin+=(height-(nbrow-1)*step)/2;
+    
+    /* create node grid */
+    for (row=0;row<nbrow;row++)
+      for (col=0;col<nbcol;col++) {
+        var ci=5*(row+col*nbrow);
+        x=col*step+xmin;
+        y=row*step+ymin;
+        
+        /* create a cluster centred on x,y */
+        grid[ci  ]=new Node(x, y);
+        grid[ci+1]=new Node((x+cluster_size), y);
+        grid[ci+2]=new Node(x, (y-cluster_size));
+        grid[ci+3]=new Node((x-cluster_size), y);
+        grid[ci+4]=new Node(x, (y+cluster_size));
+        
+        add_node(grid[ci]);
+        add_node(grid[ci+1]);
+        add_node(grid[ci+2]);
+        add_node(grid[ci+3]);
+        add_node(grid[ci+4]);
+        
+        /* internal edges */
+        add_edge(new Edge(grid[ci], grid[ci+1]));
+        add_edge(new Edge(grid[ci], grid[ci+2]));
+        add_edge(new Edge(grid[ci], grid[ci+3]));
+        add_edge(new Edge(grid[ci], grid[ci+4]));
+        add_edge(new Edge(grid[ci+1], grid[ci+2]));
+        add_edge(new Edge(grid[ci+2], grid[ci+3]));
+        add_edge(new Edge(grid[ci+3], grid[ci+4]));
+        add_edge(new Edge(grid[ci+4], grid[ci+1]));
+        
+      }
+    
+    // create inter-cluster edges
+    for (row=0;row<nbrow;row++)
+      for (col=0;col<nbcol;col++) {
+        if (col!=nbcol-1)
+          // horizontal edge from edge 1 of cluster (row, col) to edge 3
+          // of cluster (row,col+1)
+          add_edge(new Edge(grid[5*(row+col*nbrow)+1],grid[5*(row+(col+1)*nbrow)+3]));
+        if (row!=nbrow-1)
+          // vertical edge from edge 4 of cluster (row, col) to edge 2
+          // of cluster (row+1,col)
+          add_edge(new Edge(grid[5*(row+col*nbrow)+4], grid[5*(row+1+col*nbrow)+2]));
+      }
+    break;
+    
+  case Graph.TYPE_TGRID:
+    // simple grid graph
+    step=param1; //was (int)param1
+    size=width<height?height:width;
+    
+    // empirically, it seems there are 2 curves only if both
+    // nbcol and nbrow are even, so we round them to even
+    nbcol=floor((2+size/step)/2*2);
+    nbrow=floor((2+size/step)/2*2);
+    // was: nbcol=(int)((2+size/step)/2*2);
+    //      nbrow=(int)((2+size/step)/2*2);
+    
+    grid = new Array(nbrow*nbcol);
+    
+    /* adjust xmin and xmax so that the grid is centered */
+    xmin+=(width-(nbcol-1)*step)/2;
+    ymin+=(height-(nbrow-1)*step)/2;
+    
+    /* create node grid */
+    for (row=0;row<nbrow;row++)
+      for (col=0;col<nbcol;col++) {
+        x=col*step+xmin;
+        y=row*step+ymin;
+        grid[row+col*nbrow]=new Node(x, y);
+        add_node(grid[row+col*nbrow]);
+      }
+    
+    /* create edges */
+    for (row=0;row<nbrow;row++)
+      for (col=0;col<nbcol;col++) {
+        if (col!=nbcol-1)
+          add_edge(new Edge(grid[row+col*nbrow], grid[row+(col+1)*nbrow]));
+        if (row!=nbrow-1)
+          add_edge(new Edge(grid[row+col*nbrow], grid[row+1+col*nbrow]));
+        if (col!=nbcol-1 && row!=nbrow-1) {
+          add_edge(new Edge(grid[row+col*nbrow], grid[row+1+(col+1)*nbrow]));
+          add_edge(new Edge(grid[row+1+col*nbrow], grid[row+(col+1)*nbrow]));
         }
-
-      break;
-
-    case Graph.TYPE_TGRID:
-      /* simple grid graph */
-      step=(int)param1;
-      size=(width<height?height:width);
-
-      /* empirically, it seems there are 2 curves only if both
-         nbcol and nbrow are even, so we round them to even */
-      nbcol=(int)((2+size/step)/2*2);
-      nbrow=(int)((2+size/step)/2*2);
-
-      grid = new Node[nbrow*nbcol];
-
-      /* adjust xmin and xmax so that the grid is centered */
-      xmin+=(width-(nbcol-1)*step)/2;
-      ymin+=(height-(nbrow-1)*step)/2;
-
-      /* create node grid */
-      for (var row=0;row<nbrow;row++)
-        for (var col=0;col<nbcol;col++) {
-          x=col*step+xmin;
-          y=row*step+ymin;
-          grid[row+col*nbrow]=new Node(x, y);
-          add_node(grid[row+col*nbrow]);
-        }
-
-      /* create edges */
-      for (var row=0;row<nbrow;row++)
-        for (var col=0;col<nbcol;col++) {
-          if (col!=nbcol-1)
-            add_edge(new Edge(grid[row+col*nbrow], grid[row+(col+1)*nbrow]));
-          if (row!=nbrow-1)
-            add_edge(new Edge(grid[row+col*nbrow], grid[row+1+col*nbrow]));
-          if (col!=nbcol-1 && row!=nbrow-1) {
-            add_edge(new Edge(grid[row+col*nbrow], grid[row+1+(col+1)*nbrow]));
-            add_edge(new Edge(grid[row+1+col*nbrow], grid[row+(col+1)*nbrow]));
-          }
-        }
-      break;
-    }
+      }
+    break;
   }
 
-  public void add_node(Node n) {
-    nodes.addElement(n);
+  function add_node(node) 
+  {
+    nodes.addElement(node);
     //    System.out.println("Adding: "+n+"\n");
   }
 
-  public void add_edge(Edge e) {
-    edges.addElement(e);
-    /* for each node n of e, add n to pointer e */
-    e.node1.add_edge(e);
-    e.node2.add_edge(e);
+  function add_edge(edge)
+  {
+    edges.addElement(edge);
+    // for each node of edge 'edge', add it to 'e'
+    edge.node1.add_edge(edge);
+    edge.node2.add_edge(edge);
     //    System.out.println("Adding: "+e+"\n");
   }
 
-  public Edge next_edge_around(Node n, EdgeDirection ed) {
-    /* return the next edge after e around node n clockwise */
-    float angle, minangle=20;
-    Edge next_edge = ed.e, edge;
+  function next_edge_around(n, ed) {
+    // return the next edge after e around node n clockwise
+    var angle, minangle=20;
+    var next_edge = ed.e, edge;
     for (var i=0;i<n.edges.size();i++) {
-      edge=(Edge)n.edges.elementAt(i);
+      edge=n.edges.elementAt(i);
        if (edge != ed.e) {
          angle = ed.e.angle_to(edge,n,ed.d);
          if (angle < minangle) {
@@ -288,115 +304,119 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
     return next_edge;
   }
 
-  public void draw() {
-    for (var i=0;i<nodes.size();i++) ((Node)nodes.elementAt(i)).draw();
-    for (var i=0;i<edges.size();i++) ((Edge)edges.elementAt(i)).draw();
+  function draw() 
+  {
+    var i;
+    for (i=0;i<nodes.size();i++) (nodes.elementAt(i)).draw(); //@@ implement Vector
+    for (i=0;i<edges.size();i++) (edges.elementAt(i)).draw();
   }
 
-  public String toString() {
-    String s="Graph: ";
+  function toString()
+  {
+    var i;
+    var s="Graph: ";
     s+="\n- "+nodes.size()+" Nodes: ";
-    for (var i=0;i<nodes.size();i++) s+=((Node)nodes.elementAt(i)).toString();
+    for (i=0;i<nodes.size();i++) s+=(nodes.elementAt(i)).toString();
     s+="\n- "+edges.size()+" Edges: ";
-    for (var i=0;i<edges.size();i++) s+=((Edge)edges.elementAt(i)).toString();
+    for (i=0;i<edges.size();i++) s+=(edges.elementAt(i)).toString();
     return s;
   }
 
-  public void rotate(float angle, float cx, float cy) {
-    /* rotate all the nodes of this graph around point (cx,cy) */
-    float c=cos(angle),s=sin(angle),x,y;
-    Node n;
+  function rotate(angle, cx, cy) {
+    // rotate all the nodes of this graph around point (cx,cy)
+    var c=cos(angle),s=sin(angle),x,y;
+    var n;
     for (var i=0;i<nodes.size();i++) {
-      n=(Node)nodes.elementAt(i);
+      n=nodes.elementAt(i);
       x=n.x; y=n.y;
       n.x = (x-cx)*c-(y-cy)*s + cx;
       n.y = (x-cx)*s+(y-cy)*c + cy;
     }
   }
-
-
-
 }
 
-class Node {
-  public float x,y;
-  public Vector edges;
+//====================================================================================
 
-  public Node(float x, float y) {
-    this.x=x;
-    this.y=y;
-    edges=new Vector();
-  }
+function Node(new_x,new_y)
+{
+  var x,y; // float
+  var edges; //Vector
 
-  public void draw() {
+  x=new_x;
+  y=new_y;
+  edges=new Vector();
+
+  function draw() 
+  {
     arc(x, y, 10.0, 10.0, 0.0, TWO_PI);
   }
 
-  public String toString() {
+  function toString()
+  {
     return "Node: ("+x+","+y+")";
   }
 
-  public void add_edge(Edge e) {
+  function add_edge(e)
+  {
     edges.addElement(e);
   }
 };
 
-class Params {
-  float curve_width, shadow_width;
-  float shape1, shape2;
-  float margin;
+//================================================================================
 
-  int type; // one of Graph.TYPE_*
-  float edge_size;
-  float cluster_size; /* only used if type is kennicott */
-  long delay;        /* controls curve drawing speed (step delay in microsecs) */
-  long nsteps; /* only if triangle: number of subdivisions along the side */
-  long nb_orbits;          /* only used if type is polar */
-  long nb_nodes_per_orbit; /* only used if type is polar */
-
-  float angle; /* angle of rotation of the graph around the centre */
+function Params()
+{
+  var curve_width, shadow_width; //float
+  var shape1, shape2; //float
+  var margin; //float
+  var type; // int. one of Graph.TYPE_*
+  var edge_size;
+  var cluster_size; /* only used if type is kennicott */
+  var delay;        /* controls curve drawing speed (step delay in microsecs) */
+  var nsteps; /* only if triangle: number of subdivisions along the side */
+  var nb_orbits;          /* only used if type is polar */
+  var nb_nodes_per_orbit; /* only used if type is polar */
+  var angle; /* angle of rotation of the graph around the centre */
 };
 
-class Pattern {
-  float shape1, shape2;
-  EdgeCouple ec;
-  Graph graph;
-  Vector splines;
+//================================================================================
 
-  public Pattern(State t, Graph g, float shape1, float shape2) {
-    this.shape1=shape1;
-    this.shape2=shape2;
-    this.graph=g;
-    this.ec=new EdgeCouple(g.edges.size());
-    this.splines=new Vector(10);
-  }
+function Pattern(new_t, new_g, new_shape1, new_shape2) {
+  var shape1, shape2;
+  var ec; //EdgeCouple
+  var graph;
+  var splines; //Vector
 
-  public void edge_couple_set(EdgeDirection ed, int value) {
+  this.shape1=new_shape1;
+  this.shape2=new_shape2;
+  this.graph=new_g;
+  this.ec=new EdgeCouple(new_g.edges.size());
+  this.splines=new Vector(10);
+
+  function edge_couple_set(ed, value) {
     for (var i=0;i<graph.edges.size();i++)
-      if ((Edge)graph.edges.elementAt(i)==ed.e) {
+      if (graph.edges.elementAt(i)==ed.e) {
         ec.array[i][ed.d]=value;
         return;
       }
   }
 
-  public void draw_spline_direction(Spline s,
-                                    Node node, Edge edge1, Edge edge2,
-                                    int direction)
+  function draw_spline_direction(s, node, edge1, edge2, direction)
   {
-    float x1=(edge1.node1.x+edge1.node2.x)/2.0;
-    float y1=(edge1.node1.y+edge1.node2.y)/2.0;
+    var x1=(edge1.node1.x+edge1.node2.x)/2.0;
+    var y1=(edge1.node1.y+edge1.node2.y)/2.0;
 
-    /* P2 (x2,y2) is the middle point of edge1 */
-    float x4=(edge2.node1.x+edge2.node2.x)/2.0;
-    float y4=(edge2.node1.y+edge2.node2.y)/2.0;
+    // P2 (x2,y2) is the middle point of edge1
+    var x4=(edge2.node1.x+edge2.node2.x)/2.0;
+    var y4=(edge2.node1.y+edge2.node2.y)/2.0;
 
-    float alpha=edge1.angle_to(edge2,node,direction)*this.shape1;
-    float beta=this.shape2;
+    var alpha=edge1.angle_to(edge2,node,direction)*this.shape1;
+    var beta=this.shape2;
 
-    float i1x,i1y,i2x,i2y,x2,y2,x3,y3;
+    var i1x,i1y,i2x,i2y,x2,y2,x3,y3;
 
     if (direction == ANTICLOCKWISE) {
-      /* I1 must stick out to the left of NP1 and I2 to the right of NP4 */
+      // I1 must stick out to the left of NP1 and I2 to the right of NP4
       i1x =  alpha*(node.y-y1)+x1;
       i1y = -alpha*(node.x-x1)+y1;
       i2x = -alpha*(node.y-y4)+x4;
@@ -407,7 +427,7 @@ class Pattern {
       y3 =  beta*(x4-i2x) + i2y;
     }
     else {
-      /* I1 must stick out to the left of NP1 and I2 to the right of NP4 */
+      // I1 must stick out to the left of NP1 and I2 to the right of NP4
       i1x = -alpha*(node.y-y1)+x1;
       i1y =  alpha*(node.x-x1)+y1;
       i2x =  alpha*(node.y-y4)+x4;
@@ -417,40 +437,39 @@ class Pattern {
       x3 =  beta*(y4-i2y) + i2x;
       y3 = -beta*(x4-i2x) + i2y;
     }
-
     s.add_segment(x1,y1,x2,y2,x3,y3,x4,y4);
   }
 
 
-  EdgeDirection next_unfilled_couple()
+  function next_unfilled_couple()
   {
-    EdgeDirection ed=null;
+    var ed=null; //EdgeDirection
     for (var i=0;i<this.ec.size;i++) {
       if (this.ec.array[i][CLOCKWISE]==0) {
-        ed = new EdgeDirection((Edge)this.graph.edges.elementAt(i), CLOCKWISE);
+        ed = new EdgeDirection(this.graph.edges.elementAt(i), CLOCKWISE);
         return ed;
       }
       else if (this.ec.array[i][ANTICLOCKWISE]==0) {
-        ed = new EdgeDirection((Edge)this.graph.edges.elementAt(i), ANTICLOCKWISE);
+        ed = new EdgeDirection(this.graph.edges.elementAt(i), ANTICLOCKWISE);
         return ed;
       }
     }
     return ed; // possibly null if no edge found
   }
 
-  public void make_curves()
+  function make_curves()
   {
-    int i;
-    Edge current_edge, first_edge, next_edge;
-    Node current_node, first_node;
-    int current_direction, first_direction;
-    Spline s;
-    EdgeDirection first_edge_direction, current_edge_direction;
+    var i;
+    var current_edge, first_edge, next_edge;
+    var current_node, first_node;
+    var current_direction, first_direction;
+    var s; //Spline
+    var first_edge_direction, current_edge_direction;
 
     i=0;
     while ((first_edge_direction=next_unfilled_couple())!=null) {
-      /* start a new loop */
-      s=new Spline(int(random(100,255)), int(random(100,255)), int(random(100,255)));
+      // start a new loop
+      s=new Spline(floor(random(100,255)), floor(random(100,255)), floor(random(100,255))); //@@
       this.splines.addElement(s);
 
       current_edge_direction = new EdgeDirection(first_edge_direction.e,
@@ -461,10 +480,10 @@ class Pattern {
         this.edge_couple_set(current_edge_direction, 1);
         next_edge = this.graph.next_edge_around(current_node,current_edge_direction);
 
-        /* add the spline segment to the spline */
+        // add the spline segment to the spline
         this.draw_spline_direction(s,current_node, current_edge_direction.e, next_edge, current_edge_direction.d);
 
-        /* cross the edge */
+        // cross the edge
         current_edge_direction.e = next_edge;
         current_node = next_edge.other_node(current_node);
         current_edge_direction.d = 1-current_edge_direction.d;
@@ -472,112 +491,107 @@ class Pattern {
       } while (current_node!=first_node ||
                current_edge_direction.e!=first_edge_direction.e ||
                current_edge_direction.d!=first_edge_direction.d);
-      if (s.segments.size()==2) /* spline is just one point: remove it */
+      if (s.segments.size()==2) // spline is just one point: remove it
         this.splines.remove(this.splines.size()-1);
     }
   }
 }
 
-class Point {
-  public float x,y;
-  public Point(float x, float y) {
-    this.x=x;
-    this.y=y;
-  }
+//================================================================================
+
+function Point(new_x, new_y) 
+{
+  var x,y;
+  x=new_x;
+  y=new_y;
 }
 
-class PointIndex {
+//================================================================================
+ 
+function PointIndex(new_x,new_y,new_i) {
   // Typically one point of a spline and the segment index of the spline that
   // the point is on
-  public Point p;
-  public int i;
-  public PointIndex(float x, float y, int i) {
-    p=new Point(x,y);
-    i=i;
-  }
+  var p=new Point(x,y);
+  var i=new_i;
 }
-class Spline {
-  Vector segments; /* array of SplineSegment */
-  int r, g, b;
 
-  public Spline(int red, int green, int blue) {
-    segments=new Vector(30);
-    this.r=red;
-    this.g=green;
-    this.b=blue;
-  }
+//================================================================================
 
-  public void add_segment(float x1, float y1, float x2, float y2,
-                          float x3, float y3, float x4, float y4) {
+function Spline(red,green,blue) {
+  var segments = new Vector(30); // Vector of SplineSegment
+  var r=red, g=green, b=blue;
+
+  function add_segment(x1, y1, x2, y2, x3, y3, x4, y4)
+  {
     segments.addElement(new SplineSegment(x1,y1,x2,y2,x3,y3,x4,y4));
   }
 
-  public PointIndex value_at(float t) {
-    int si;
-    float tt;
-    SplineSegment ss;
+  function value_at(t)
+  {
+    var si;
+    var tt;
+    var ss;
     si = floor(t*segments.size());
     if (si==segments.size()) si--;
     //    System.out.println("out: "+si+", "+this.segments.size()+", "+t);
     tt = t*this.segments.size() - si;
-    ss=(SplineSegment)this.segments.elementAt(si);
+    ss=this.segments.elementAt(si);
 
     return new PointIndex(ss.x1*(1-tt)*(1-tt)*(1-tt)+3*ss.x2*tt*(1-tt)*(1-tt)+3*ss.x3*tt*tt*(1-tt)+ss.x4*tt*tt*tt,
                           ss.y1*(1-tt)*(1-tt)*(1-tt)+3*ss.y2*tt*(1-tt)*(1-tt)+3*ss.y3*tt*tt*(1-tt)+ss.y4*tt*tt*tt,
                           si);
   }
 
-  public void draw() {
+  function draw() {
     //    System.out.println("=== spline ===");
     for (var i=0;i<segments.size();i++) {
-      SplineSegment s= (SplineSegment)segments.elementAt(i);
+      var s= segments.elementAt(i);
       s.draw();
     }
   }
 }
 
-class SplineSegment {
-  float x1,y1,x2,y2,x3,y3,x4,y4;
-  public SplineSegment(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
-    this.x1=x1; this.y1=y1;
-    this.x2=x2; this.y2=y2;
-    this.x3=x3; this.y3=y3;
-    this.x4=x4; this.y4=y4;
-  }
+//================================================================================
 
-  public void draw() {
-    arc(this.x1, this.y1, 2.0, 2.0, 0.0, TWO_PI);
-    arc(this.x2, this.y2, 2.0, 2.0, 0.0, TWO_PI);
-    arc(this.x3, this.y3, 2.0, 2.0, 0.0, TWO_PI);
-    arc(this.x4, this.y4, 2.0, 2.0, 0.0, TWO_PI);
-    line(this.x1,this.y1, this.x2,this.y2);
-    line(this.x2,this.y2, this.x3,this.y3);
-    line(this.x3,this.y3, this.x4,this.y4);
+function SplineSegment(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, new_y4) {
+  var x1,y1,x2,y2,x3,y3,x4,y4;
+
+  x1=new_x1; y1=new_y1;
+  x2=new_x2; y2=new_y2;
+  x3=new_x3; y3=new_y3;
+  x4=new_x4; y4=new_y4;
+
+  function draw() {
+    arc(x1, y1, 2.0, 2.0, 0.0, TWO_PI);
+    arc(x2, y2, 2.0, 2.0, 0.0, TWO_PI);
+    arc(x3, y3, 2.0, 2.0, 0.0, TWO_PI);
+    arc(x4, y4, 2.0, 2.0, 0.0, TWO_PI);
+    line(x1,y1, x2,y2);
+    line(x2,y2, x3,y3);
+    line(x3,y3, x4,y4);
     //    System.out.println("segment: "+this.x1+","+this.y1+" = "+this.x2+","+this.y2+" = "+this.x3+","+this.y3+" = "+this.x4+","+this.y4);
   }
+}
 
+//================================================================================
 
-};
-
-
-
-
-class State {
-  float STEP=0.005;
-  boolean showGraph;
-  Pattern pattern;
-  Graph graph;
-  int width, height;
-  int delay2;
-  int reset;
-  float t;
-
-  Params params;
+function State()
+{
+  var STEP=0.005;
+  var showGraph; //Boolean
+  var pattern;
+  var graph;
+  var width, height;
+  var delay2;
+  var reset;
+  var t;
+  var params;
 };
 
 //===========================================================================
 
-void myinit() {
+function myinit()
+{
   st = new State();
   st.params = new Params();
   st.params.curve_width=random(4,10);
@@ -637,8 +651,8 @@ void myinit() {
       break;
     case Graph.TYPE_POLAR:
       st.params.type=Graph.TYPE_POLAR;
-      st.params.nb_orbits=int(random(2,11));
-      st.params.nb_nodes_per_orbit=int(random(4,13));
+      st.params.nb_orbits=random(2,11);
+      st.params.nb_nodes_per_orbit=random(4,13);
       st.graph=new Graph(Graph.TYPE_POLAR,
                          st.params.margin,
                          st.params.margin,
@@ -654,7 +668,7 @@ void myinit() {
   st.pattern.make_curves();
   st.t = 0.0;
 
-  background(int(random(0,100)),int(random(0,100)),int(random(0,100)));
+  background(random(0,100),random(0,100),random(0,100));
 
   //  if (st.pattern.splines.size()==1) {
     colorMode(HSB);
@@ -667,13 +681,14 @@ void myinit() {
   //  System.out.println(st.graph);
 }
 
-public static State st;
-public static float t,t2;
-public static Spline s;
-public static PointIndex pi1, pi2, pi3, pi4;
-public static color start, end;
+var st; // State
+var t,t2; //float
+var s;
+var pi1, pi2, pi3, pi4;
+var start, end; // colors
 
-void setup() {
+function setup() 
+{
   size(WIDTH, HEIGHT);
   stroke(0,0,0);
   smooth();
@@ -682,15 +697,15 @@ void setup() {
   //  st.graph.draw();
 }
 
-void draw() {
-  float speed;
-  color c;
+function draw() {
+  var speed;
+  var c; //color
   t2 = (t+st.STEP>1.0) ? 1.0 : t+st.STEP;
 
   //  System.out.println("t: "+t+", t2: "+t2);
 
   for (var i=0;i<st.pattern.splines.size();i++) {
-    s=(Spline)st.pattern.splines.elementAt(i);
+    s=st.pattern.splines.elementAt(i);
     //    s.draw();
 
     if (s != null) { // skip if one-point spline 
@@ -722,9 +737,9 @@ void draw() {
   }
 }
 
- void mousePressed() {
-   myinit();
-   t=0;
-   loop();
- }
 
+function mousePressed() {
+  myinit();
+  t=0;
+  loop();
+}
