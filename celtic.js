@@ -15,27 +15,48 @@ const TWO_PI = 2*PI;
 //================================================================================
 // Processing functions and types rewritten
 
-function ProcessingObj() {
-  this.RGB = 0,
-  this.HSB = 1,
-  this._colorMode = this.RGB, // one of RGB or HSB
-  
-  this.colorMode = function(mode)
-  { 
-    this._colorMode=mode; 
-  };
-
-  this.random = function(min,max)
-  {
-    return min;
-    return (Math.floor(Math.random()*(1+max-min)) + min) | 0;
-  };
+function Processing() {
+  this.RGB = 0;
+  this.HSB = 1;
+  this._colorMode = RGB; // one of RGB or HSB
+  this.r = this.g = this.b = 0.0;
 
 };
 
-var Processing = new ProcessingObj();
+// return a number in [min, max[
+// <http://processing.org/reference/random_.html>
+Processing.random = function(min,max)
+{
+  return Math.random()*(max-min) + min;
+};
 
-//================================================================================
+Processing.colorMode = function(mode)
+{ 
+  this._colorMode=mode; 
+};
+
+Processing.color = function(a,b,c)
+{
+  switch(this._colorMode) {
+    case this.RGB: this.r=a; this.g=b; this.b=c; break;
+  }
+}
+
+// <http://processing.org/reference/strokeWeight_.html>
+Processing.strokeWeight = function(weight) 
+{
+  g_ctx.lineWidth = weight;
+}
+
+// <http://processing.org/reference/line_.html>
+Processing.line = function(x1,y1, x2,y2)
+{
+  g_ctx.moveTo(x1,y1);
+  g_ctx.lineTo(x2,y2);
+}
+
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function Edge(n1,n2) {
   this.node1=n1;
@@ -45,9 +66,9 @@ function Edge(n1,n2) {
   this.angle2=Math.atan2(n1.y - n2.y, n1.x - n2.x);
   if (this.angle2 < 0) this.angle2+=TWO_PI;
 
-  draw = function() 
+  function draw() 
   {
-    line(this.node1.x,this.node1.y, this.node2.x,this.node2.y);
+    Processing.line(this.node1.x,this.node1.y, this.node2.x,this.node2.y);
   };
 
   toString = function()
@@ -107,7 +128,7 @@ function EdgeDirection (edge,direction)
 
 
 function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_param2) {
-  this.type=new_type; //int
+  this.type=new_type; // (TYPE_POLAR, TYPE_GRID...)
   this.nodes = [];
   this.edges = [];
   var xmin,ymin,width,height; //int
@@ -115,10 +136,25 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
   var grid; // array of Node
   var step,nbcol,nbrow; //int
 
+  this.add_edge = function(edge)
+  {
+    this.edges.push(edge);
+    // for each node of edge 'edge', add it to 'e'
+    edge.node1.add_edge(edge);
+    edge.node2.add_edge(edge);
+    //    System.out.println("Adding: "+e+"\n");
+  };
+
+  this.add_node = function(node) 
+  {
+    this.nodes.push(node);
+    //    System.out.println("Adding: "+n+"\n");
+  };
+
   switch (this.type) {
   case Graph.TYPE_POLAR:
-    var nbp=new_param1; // number of points on each orbit
-    var nbo=new_param2; // number of orbits
+    var nbp=new_param1 | 0; // number of points on each orbit
+    var nbo=new_param2 | 0; // number of orbits
     var os = (new_width<new_height?new_width:new_height)/(2*nbo); // orbit height 
     var o,p, row, col; // iterator indexes
     grid = new Array(1+nbp*nbo); // array of Node
@@ -137,12 +173,12 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
       for (p=0;p<nbp;p++) {
         if (o===0) { 
           // link first orbit nodes with centre
-          add_edge(new Edge(grid[1+o*nbp+p],grid[0]));
+          this.add_edge(new Edge(grid[1+o*nbp+p],grid[0]));
         }
         else // link orbit nodes with lower orbit 
-          add_edge(new Edge(grid[1+o*nbp+p],grid[1+(o-1)*nbp+p]));
+          this.add_edge(new Edge(grid[1+o*nbp+p],grid[1+(o-1)*nbp+p]));
         // link along orbit 
-        add_edge(new Edge(grid[1+o*nbp+p], grid[1+o*nbp+(p+1)%nbp]));
+        this.add_edge(new Edge(grid[1+o*nbp+p], grid[1+o*nbp+(p+1)%nbp]));
       }
     break;
     
@@ -151,8 +187,8 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
     var L=(width<height?width:height)/2.0; // circumradius of the triangle
     cx=(xmin+width/2.0); cy=(ymin+height/2.0); /* centre of the triangle */
     var p2x=(cx-L*SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
-    var nsteps=Math.floor(3*L/(SQRT_3*edge_size));
-    grid = new Node[(nsteps+1)*(nsteps+1)];
+    var nsteps=Math.floor(3*L/(SQRT_3*edge_size)) | 0;
+    grid = new Array((nsteps+1)*(nsteps+1));
     
     // create node grid
     for (row=0;row<=nsteps;row++)
@@ -161,7 +197,7 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
           x=p2x+col*L*SQRT_3/nsteps + row*L*SQRT_3/(2*nsteps);
           y=p2y-row*3*L/(2*nsteps);
           grid[col+row*(nsteps+1)]=new Node(x, y);
-          add_node(grid[col+row*(nsteps+1)]);
+          this.add_node(grid[col+row*(nsteps+1)]);
         }
     
     // create edges
@@ -187,9 +223,9 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
     step=new_param1;
     var cluster_size=new_param2;
     size=width<height?height:width;
-    nbcol=Math.floor((1+size/step)/2*2); //@@ was (int)((1+size/step)/2*2)
-    nbrow=Math.floor((1+size/step)/2*2);
-    grid = new Node[5*nbrow*nbcol];   /* there are 5 nodes in each cluster */
+    nbcol=Math.floor((1+size/step)/2*2) | 0; //@@ was (int)((1+size/step)/2*2)
+    nbrow=Math.floor((1+size/step)/2*2) | 0;
+    grid = new Array(5*nbrow*nbcol);   /* there are 5 nodes in each cluster */
     
     /* adjust xmin and xmax so that the grid is centred */
     xmin+=(width-(nbcol-1)*step)/2;
@@ -209,21 +245,21 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
         grid[ci+3]=new Node((x-cluster_size), y);
         grid[ci+4]=new Node(x, (y+cluster_size));
         
-        add_node(grid[ci]);
-        add_node(grid[ci+1]);
-        add_node(grid[ci+2]);
-        add_node(grid[ci+3]);
-        add_node(grid[ci+4]);
+        this.add_node(grid[ci]);
+        this.add_node(grid[ci+1]);
+        this.add_node(grid[ci+2]);
+        this.add_node(grid[ci+3]);
+        this.add_node(grid[ci+4]);
         
         /* internal edges */
-        add_edge(new Edge(grid[ci], grid[ci+1]));
-        add_edge(new Edge(grid[ci], grid[ci+2]));
-        add_edge(new Edge(grid[ci], grid[ci+3]));
-        add_edge(new Edge(grid[ci], grid[ci+4]));
-        add_edge(new Edge(grid[ci+1], grid[ci+2]));
-        add_edge(new Edge(grid[ci+2], grid[ci+3]));
-        add_edge(new Edge(grid[ci+3], grid[ci+4]));
-        add_edge(new Edge(grid[ci+4], grid[ci+1]));
+        this.add_edge(new Edge(grid[ci], grid[ci+1]));
+        this.add_edge(new Edge(grid[ci], grid[ci+2]));
+        this.add_edge(new Edge(grid[ci], grid[ci+3]));
+        this.add_edge(new Edge(grid[ci], grid[ci+4]));
+        this.add_edge(new Edge(grid[ci+1], grid[ci+2]));
+        this.add_edge(new Edge(grid[ci+2], grid[ci+3]));
+        this.add_edge(new Edge(grid[ci+3], grid[ci+4]));
+        this.add_edge(new Edge(grid[ci+4], grid[ci+1]));
         
       }
     
@@ -265,35 +301,26 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
         x=col*step+xmin;
         y=row*step+ymin;
         grid[row+col*nbrow]=new Node(x, y);
-        add_node(grid[row+col*nbrow]);
+        this.add_node(grid[row+col*nbrow]);
       }
     
     /* create edges */
     for (row=0;row<nbrow;row++)
       for (col=0;col<nbcol;col++) {
         if (col!=nbcol-1)
-          add_edge(new Edge(grid[row+col*nbrow], grid[row+(col+1)*nbrow]));
+          this.add_edge(new Edge(grid[row+col*nbrow], grid[row+(col+1)*nbrow]));
         if (row!=nbrow-1)
-          add_edge(new Edge(grid[row+col*nbrow], grid[row+1+col*nbrow]));
+          this.add_edge(new Edge(grid[row+col*nbrow], grid[row+1+col*nbrow]));
         if (col!=nbcol-1 && row!=nbrow-1) {
-          add_edge(new Edge(grid[row+col*nbrow], grid[row+1+(col+1)*nbrow]));
-          add_edge(new Edge(grid[row+1+col*nbrow], grid[row+(col+1)*nbrow]));
+          this.add_edge(new Edge(grid[row+col*nbrow], grid[row+1+(col+1)*nbrow]));
+          this.add_edge(new Edge(grid[row+1+col*nbrow], grid[row+(col+1)*nbrow]));
         }
       }
     break;
   }
 
 
-  add_edge = function(edge)
-  {
-    edges.push(edge);
-    // for each node of edge 'edge', add it to 'e'
-    edge.node1.add_edge(edge);
-    edge.node2.add_edge(edge);
-    //    System.out.println("Adding: "+e+"\n");
-  };
-
-  next_edge_around = function(n, ed) {
+  this.next_edge_around = function(n, ed) {
     // return the next edge after e around node n clockwise
     var angle, minangle=20;
     var next_edge = ed.e, edge;
@@ -310,14 +337,14 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
     return next_edge;
   };
 
-  function draw() 
+  this.draw = function() 
   {
     var i;
-    for (i=0;i<nodes.length;i++) nodes[i].draw();
-    for (i=0;i<edges.length;i++) nodes[i].draw();
-  }
+    for (i=0;i<this.nodes.length;i++) this.nodes[i].draw();
+    for (i=0;i<this.edges.length;i++) this.nodes[i].draw();
+  };
 
-  function toString()
+  this.toString = function()
   {
     var i;
     var s="Graph: ";
@@ -326,9 +353,9 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
     s+="\n- "+edges.length+" Edges: ";
     for (i=0;i<edges.length;i++) s+=edges[i].toString();
     return s;
-  }
+  };
 
-  rotate = function(angle, cx, cy) {
+  this.rotate = function(angle, cx, cy) {
     // rotate all the nodes of this graph around point (cx,cy)
     var c=cos(angle),s=sin(angle),x,y;
     var n;
@@ -345,11 +372,6 @@ Graph.TYPE_POLAR=0;
 Graph.TYPE_TGRID=1;
 Graph.TYPE_KENNICOTT=2;
 Graph.TYPE_TRIANGLE=3;
-Graph.prototype.add_node = function(node) 
-{
-  this.nodes.push(node);
-  //    System.out.println("Adding: "+n+"\n");
-};
 
 
 
@@ -364,17 +386,17 @@ function Node(new_x,new_y)
   x=new_x;
   y=new_y;
 
-  function draw() 
+  this.draw = function() 
   {
-    arc(x, y, 10.0, 10.0, 0.0, TWO_PI);
-  }
+    circle(x, y, 10.0);
+  };
 
-  function toString()
+  this.toString = function()
   {
     return "Node: ("+x+","+y+")";
-  }
+  };
 
-  add_edge = function(e)
+  this.add_edge = function(e)
   {
     edges.push(e);
   };
@@ -580,13 +602,13 @@ function SplineSegment(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, n
   x4=new_x4; y4=new_y4;
 
   draw = function() {
-    arc(x1, y1, 2.0, 2.0, 0.0, TWO_PI);
-    arc(x2, y2, 2.0, 2.0, 0.0, TWO_PI);
-    arc(x3, y3, 2.0, 2.0, 0.0, TWO_PI);
-    arc(x4, y4, 2.0, 2.0, 0.0, TWO_PI);
-    line(x1,y1, x2,y2);
-    line(x2,y2, x3,y3);
-    line(x3,y3, x4,y4);
+    circle(x1, y1, 2.0);
+    circle(x2, y2, 2.0);
+    circle(x3, y3, 2.0);
+    circle(x4, y4, 2.0);
+    Processing.line(x1,y1, x2,y2);
+    Processing.line(x2,y2, x3,y3);
+    Processing.line(x3,y3, x4,y4);
     //    System.out.println("segment: "+this.x1+","+this.y1+" = "+this.x2+","+this.y2+" = "+this.x3+","+this.y3+" = "+this.x4+","+this.y4);
   }
 }
@@ -608,6 +630,15 @@ function State()
 
 //===========================================================================
 
+function circle(cx,cy,radius)
+{
+  g_ctx.beginPath();
+  g_ctx.arc(cx,cy,radius,0,TWO_PI,false);
+  g_ctx.closePath();
+}
+
+//===========================================================================
+
 function myinit()
 {
   st = new State();
@@ -624,7 +655,7 @@ function myinit()
   st.params.angle=Processing.random(0,2*PI);
   st.params.margin=Processing.random(0,100);
 
-  st.params.type=Processing.random(0,4);
+  st.params.type=Math.floor(Processing.random(0,4)) | 0; // | 0 converts to an int32
 
   switch (st.params.type) {
     case Graph.TYPE_TGRID:
@@ -691,11 +722,11 @@ function myinit()
   document.getElementById("canvas").style.backgroundColor=canvasBackground;
 
   //  if (st.pattern.splines.length==1) {
-    Processing.colorMode(HSB);
+    Processing.colorMode(Processing.HSB);
     start=Processing.color(Processing.random(0,256), 200, 200);
     end=Processing.color(Processing.random(0,256), 200, 200);
     //  }
-  strokeWeight(st.params.curve_width);
+  Processing.strokeWeight(st.params.curve_width);
   //  stroke(0,0,0);
   //  st.graph.draw();
   //  System.out.println(st.graph);
@@ -712,7 +743,7 @@ function setup()
   g_ctx.strokeStyle = "rgb(0,0,0)";
   myinit();
   t=0;
-  //  st.graph.draw();
+  st.graph.draw();
 }
 
 function draw() {
@@ -730,7 +761,7 @@ function draw() {
       pi1=s.value_at(t);
       pi2=s.value_at(t2);
       //      stroke(s.r, s.g, s.b);
-      //      line(pi1.p.x,pi1.p.y, pi2.p.x,pi2.p.y);
+      //      Processing.line(pi1.p.x,pi1.p.y, pi2.p.x,pi2.p.y);
 
       //      if (st.pattern.splines.length==1) // if only one curve to draw, make it more colourful
         //        fill(lerpColor(start, end, t));
@@ -738,7 +769,7 @@ function draw() {
       //      else
       //        stroke(s.r, s.g, s.b);
 
-      line(pi1.p.x,pi1.p.y, pi2.p.x,pi2.p.y);
+      Processing.line(pi1.p.x,pi1.p.y, pi2.p.x,pi2.p.y);
       //      speed = sqrt((pi2.p.x-pi1.p.x)*(pi2.p.x-pi1.p.x)+(pi2.p.y-pi1.p.y)*(pi2.p.y-pi1.p.y));
       //      ellipse((pi2.p.x+pi1.p.x)/2, (pi2.p.y+pi1.p.y)/2, speed, speed);
     }
