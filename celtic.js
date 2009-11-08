@@ -109,13 +109,12 @@ function Edge(n1,n2) {
 
 function EdgeCouple(nb_edges) 
 {
-  var array = new Array(nb_edges);
-  var size;
+  this.size = nb_edges;
+  this.array = new Array(this.size);
   
-  for (var i=0;i<nb_edges;i++) {
-    array[i] = new Array(2);
+  for (var i=0;i<this.size;i++) {
+    this.array[i] = new Array(2);
   }
-  size=nb_edges;
 }
 
 //======================================================================
@@ -369,10 +368,10 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
 
   this.rotate = function(angle, cx, cy) {
     // rotate all the nodes of this graph around point (cx,cy)
-    var c=cos(angle),s=sin(angle),x,y;
+    var c=Math.cos(angle), s=Math.sin(angle), x, y;
     var n;
-    for (var i=0;i<nodes.length;i++) {
-      n=nodes[i];
+    for (var i=0;i<this.nodes.length;i++) {
+      n=this.nodes[i];
       x=n.x; y=n.y;
       n.x = (x-cx)*c-(y-cy)*s + cx;
       n.y = (x-cx)*s+(y-cy)*c + cy;
@@ -488,10 +487,8 @@ function Pattern(new_t, new_g, new_shape1, new_shape2) {
   };
 
 
-}
-
-Pattern.prototype.next_unfilled_couple = function()
-{
+  this.next_unfilled_couple = function()
+  {
     var ed=null; //EdgeDirection
     for (var i=0;i<this.ec.size;i++) {
       if (this.ec.array[i][CLOCKWISE]==0) {
@@ -504,6 +501,7 @@ Pattern.prototype.next_unfilled_couple = function()
       }
     }
     return ed; // possibly null if no edge found
+  };
 };
 
 
@@ -668,6 +666,7 @@ function myinit()
   st.params.margin=Processing.random(0,100);
 
   st.params.type=Math.floor(Processing.random(0,4)) | 0; // | 0 converts to an int32
+  st.params.type=4;
 
   switch (st.params.type) {
     case Graph.TYPE_TGRID:
@@ -736,7 +735,8 @@ function myinit()
     default: alert("error: graph type out of bounds: "+st.params.type);
     }
 
-  //  st.graph.rotate(st.params.angle,WIDTH/2,HEIGHT/2);
+//  st.graph.rotate(st.params.angle,WIDTH/2,HEIGHT/2);
+
   st.pattern=new Pattern(st, st.graph, st.params.shape1, st.params.shape2);
   st.pattern.make_curves();
   st.t = 0.0;
@@ -774,7 +774,6 @@ function draw() {
   t2 = (t+st.STEP>1.0) ? 1.0 : t+st.STEP;
 
   //  System.out.println("t: "+t+", t2: "+t2);
-
   for (var i=0;i<st.pattern.splines.length;i++) {
     s=st.pattern.splines[i];
     //    s.draw();
