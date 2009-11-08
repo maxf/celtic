@@ -40,19 +40,22 @@ Processing.color = function(a,b,c)
   switch(this._colorMode) {
     case this.RGB: this.r=a; this.g=b; this.b=c; break;
   }
-}
+};
 
 // <http://processing.org/reference/strokeWeight_.html>
 Processing.strokeWeight = function(weight) 
 {
   g_ctx.lineWidth = weight;
-}
+};
 
 // <http://processing.org/reference/line_.html>
 Processing.line = function(x1,y1, x2,y2)
 {
+  g_ctx.beginPath();
   g_ctx.moveTo(x1,y1);
   g_ctx.lineTo(x2,y2);
+  g_ctx.closePath();
+  g_ctx.stroke();
 }
 
 
@@ -66,12 +69,12 @@ function Edge(n1,n2) {
   this.angle2=Math.atan2(n1.y - n2.y, n1.x - n2.x);
   if (this.angle2 < 0) this.angle2+=TWO_PI;
 
-  function draw() 
+  this.draw = function() 
   {
     Processing.line(this.node1.x,this.node1.y, this.node2.x,this.node2.y);
   };
 
-  toString = function()
+  this.toString = function()
   {
     return "Edge: "+this.node1+", "+this.node2;
   };
@@ -317,6 +320,14 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
         }
       }
     break;
+    case Graph.TYPE_CUSTOM:
+    var node1=new Node(50,50); this.add_node(node1);
+    var node2=new Node(50,100); this.add_node(node2);
+    var node3=new Node(100,100); this.add_node(node3);
+
+    this.add_edge(new Edge(node1,node2));
+    this.add_edge(new Edge(node2,node3));
+    this.add_edge(new Edge(node3,node1));
   }
 
 
@@ -340,8 +351,9 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
   this.draw = function() 
   {
     var i;
+    g_ctx.strokeStyle = "rgb(0,0,0)";
     for (i=0;i<this.nodes.length;i++) this.nodes[i].draw();
-    for (i=0;i<this.edges.length;i++) this.nodes[i].draw();
+    for (i=0;i<this.edges.length;i++) this.edges[i].draw();
   };
 
   this.toString = function()
@@ -372,33 +384,32 @@ Graph.TYPE_POLAR=0;
 Graph.TYPE_TGRID=1;
 Graph.TYPE_KENNICOTT=2;
 Graph.TYPE_TRIANGLE=3;
+Graph.TYPE_CUSTOM=4;
 
 
 
 
 //====================================================================================
 
-function Node(new_x,new_y)
+function Node(x,y)
 {
-  var x,y; // float
-  var edges = [];
-
-  x=new_x;
-  y=new_y;
+  this.x=x;
+  this.y=y;
+  this.edges = [];
 
   this.draw = function() 
   {
-    circle(x, y, 10.0);
+    circle(this.x, this.y, 10.0);
   };
 
   this.toString = function()
   {
-    return "Node: ("+x+","+y+")";
+    return "Node: ("+this.x+","+this.y+")";
   };
 
   this.add_edge = function(e)
   {
-    edges.push(e);
+    this.edges.push(e);
   };
 };
 
@@ -428,7 +439,7 @@ function Pattern(new_t, new_g, new_shape1, new_shape2) {
   this.graph=new_g;
   this.ec=new EdgeCouple(new_g.edges.length);
 
-  edge_couple_set = function(ed, value)
+  this.edge_couple_set = function(ed, value)
   {
     for (var i=0;i<graph.edges.length;i++)
       if (graph.edges[i]==ed.e) {
@@ -437,7 +448,7 @@ function Pattern(new_t, new_g, new_shape1, new_shape2) {
       }
   };
 
-  draw_spline_direction = function(s, node, edge1, edge2, direction)
+  this.draw_spline_direction = function(s, node, edge1, edge2, direction)
   {
     var x1=(edge1.node1.x+edge1.node2.x)/2.0;
     var y1=(edge1.node1.y+edge1.node2.y)/2.0;
@@ -539,11 +550,10 @@ Pattern.prototype.make_curves = function()
 
 //================================================================================
 
-function Point(new_x, new_y) 
+function Point(x, y) 
 {
-  var x,y;
-  x=new_x;
-  y=new_y;
+  this.x=x;
+  this.y=y;
 }
 
 //================================================================================
@@ -561,12 +571,12 @@ function Spline(red,green,blue) {
   var segments = [];
   var r=red, g=green, b=blue;
 
-  add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
+  this.add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
   {
     segments.push(new SplineSegment(x1,y1,x2,y2,x3,y3,x4,y4));
   };
 
-  value_at = function(t)
+  this.value_at = function(t)
   {
     var si;
     var tt;
@@ -601,7 +611,7 @@ function SplineSegment(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, n
   x3=new_x3; y3=new_y3;
   x4=new_x4; y4=new_y4;
 
-  draw = function() {
+  this.draw = function() {
     circle(x1, y1, 2.0);
     circle(x2, y2, 2.0);
     circle(x3, y3, 2.0);
@@ -610,7 +620,7 @@ function SplineSegment(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, n
     Processing.line(x2,y2, x3,y3);
     Processing.line(x3,y3, x4,y4);
     //    System.out.println("segment: "+this.x1+","+this.y1+" = "+this.x2+","+this.y2+" = "+this.x3+","+this.y3+" = "+this.x4+","+this.y4);
-  }
+  };
 }
 
 //================================================================================
@@ -632,9 +642,11 @@ function State()
 
 function circle(cx,cy,radius)
 {
+  g_ctx.lineWidth = 2;
   g_ctx.beginPath();
   g_ctx.arc(cx,cy,radius,0,TWO_PI,false);
   g_ctx.closePath();
+  g_ctx.stroke();
 }
 
 //===========================================================================
@@ -656,6 +668,8 @@ function myinit()
   st.params.margin=Processing.random(0,100);
 
   st.params.type=Math.floor(Processing.random(0,4)) | 0; // | 0 converts to an int32
+  st.params.type=4; // REMOVEME
+
 
   switch (st.params.type) {
     case Graph.TYPE_TGRID:
@@ -710,6 +724,18 @@ function myinit()
                          st.params.nb_nodes_per_orbit,
                          st.params.nb_orbits);
       break;
+    case Graph.TYPE_CUSTOM:
+      st.params.type=Graph.TYPE_CUSTOM;
+      st.params.nb_orbits=Processing.random(2,11);
+      st.params.nb_nodes_per_orbit=Processing.random(4,13);
+      st.graph=new Graph(Graph.TYPE_CUSTOM,
+                         st.params.margin,
+                         st.params.margin,
+                         WIDTH-2*st.params.margin,
+                         HEIGHT-2*st.params.margin,
+                         st.params.nb_nodes_per_orbit,
+                         st.params.nb_orbits);
+      break;
     default: alert("error: graph type out of bounds: "+st.params.type);
     }
 
@@ -740,7 +766,6 @@ var start, end; // colors
 
 function setup() 
 {
-  g_ctx.strokeStyle = "rgb(0,0,0)";
   myinit();
   t=0;
   st.graph.draw();
