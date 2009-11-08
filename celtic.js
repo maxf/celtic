@@ -130,11 +130,11 @@ function EdgeDirection (edge,direction)
 //======================================================================
 
 
-function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_param2) {
-  this.type=new_type; // (TYPE_POLAR, TYPE_GRID...)
+function Graph(type,xmin,ymin,width,height,param1,param2) {
+  this.type=type; // (TYPE_POLAR, TYPE_GRID...)
   this.nodes = [];
   this.edges = [];
-  var xmin,ymin,width,height; //int
+
   var cx,cy,x,y,size; //float
   var grid; // array of Node
   var step,nbcol,nbrow; //int
@@ -156,13 +156,13 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
 
   switch (this.type) {
   case Graph.TYPE_POLAR:
-    var nbp=new_param1 | 0; // number of points on each orbit
-    var nbo=new_param2 | 0; // number of orbits
-    var os = (new_width<new_height?new_width:new_height)/(2*nbo); // orbit height 
+    var nbp=param1 | 0; // number of points on each orbit
+    var nbo=param2 | 0; // number of orbits
+    var os = (width<height?width:height)/(2*nbo); // orbit height 
     var o,p, row, col; // iterator indexes
     grid = new Array(1+nbp*nbo); // array of Node
-    cx = new_width/2+new_xmin;
-    cy = new_height/2+new_ymin; // centre
+    cx = width/2+xmin;
+    cy = height/2+ymin; // centre
 
     this.add_node(grid[0]=new Node(cx,cy));
 
@@ -186,7 +186,7 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
     break;
     
   case Graph.TYPE_TRIANGLE:
-    var edge_size=new_param1;
+    var edge_size=param1;
     var L=(width<height?width:height)/2.0; // circumradius of the triangle
     cx=(xmin+width/2.0); cy=(ymin+height/2.0); /* centre of the triangle */
     var p2x=(cx-L*SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
@@ -208,11 +208,11 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
       for (col=0;col<nsteps;col++)
         if (row+col<nsteps) {
           // horizontal edges
-          add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
+          this.add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
           // vertical edges
-          add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+1+col*(nsteps+1)]));
+          this.add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+1+col*(nsteps+1)]));
           // diagonal edges
-          add_edge(new Edge(grid[row+1+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
+          this.add_edge(new Edge(grid[row+1+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
         }
     break;
     
@@ -223,8 +223,8 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
     //                                       \|/
     // cluster_size is the length of an edge of a cluster
     
-    step=new_param1;
-    var cluster_size=new_param2;
+    step=param1;
+    var cluster_size=param2;
     size=width<height?height:width;
     nbcol=Math.floor((1+size/step)/2*2) | 0; //@@ was (int)((1+size/step)/2*2)
     nbrow=Math.floor((1+size/step)/2*2) | 0;
@@ -272,17 +272,17 @@ function Graph(new_type,new_xmin,new_ymin,new_width,new_height,new_param1,new_pa
         if (col!=nbcol-1)
           // horizontal edge from edge 1 of cluster (row, col) to edge 3
           // of cluster (row,col+1)
-          add_edge(new Edge(grid[5*(row+col*nbrow)+1],grid[5*(row+(col+1)*nbrow)+3]));
+          this.add_edge(new Edge(grid[5*(row+col*nbrow)+1],grid[5*(row+(col+1)*nbrow)+3]));
         if (row!=nbrow-1)
           // vertical edge from edge 4 of cluster (row, col) to edge 2
           // of cluster (row+1,col)
-          add_edge(new Edge(grid[5*(row+col*nbrow)+4], grid[5*(row+1+col*nbrow)+2]));
+          this.add_edge(new Edge(grid[5*(row+col*nbrow)+4], grid[5*(row+1+col*nbrow)+2]));
       }
     break;
     
   case Graph.TYPE_TGRID:
     // simple grid graph
-    step=new_param1; //was (int)param1
+    step=param1; //was (int)param1
     size=width<height?height:width;
     
     // empirically, it seems there are 2 curves only if both
@@ -668,8 +668,6 @@ function myinit()
   st.params.margin=Processing.random(0,100);
 
   st.params.type=Math.floor(Processing.random(0,4)) | 0; // | 0 converts to an int32
-  st.params.type=4; // REMOVEME
-
 
   switch (st.params.type) {
     case Graph.TYPE_TGRID:
@@ -677,7 +675,6 @@ function myinit()
       st.params.shape1=-Processing.random(0.3, 1.2);
       st.params.shape2=-Processing.random(0.3, 1.2);
       st.params.edge_size=Processing.random(50,90);
-      st.params.edge_size=500;
       st.graph=new Graph(st.params.type,
                          st.params.margin,
                          st.params.margin,
