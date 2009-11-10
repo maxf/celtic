@@ -1,5 +1,5 @@
 (function() {
-  
+
 var g_canvas = document.getElementById("canvas");
 var g_ctx;
 
@@ -29,8 +29,8 @@ function random(min,max)
 };
 
 function colorMode(mode)
-{ 
-  _colorMode=mode; 
+{
+  _colorMode=mode;
 };
 
 function color(a,b,c)
@@ -41,7 +41,7 @@ function color(a,b,c)
 };
 
 // <http://processing.org/reference/strokeWeight_.html>
-function strokeWeight(weight) 
+function strokeWeight(weight)
 {
   g_ctx.lineWidth = weight;
 };
@@ -66,50 +66,56 @@ function Edge(n1,n2) {
   if (this.angle1 < 0) this.angle1+=TWO_PI;
   this.angle2=Math.atan2(n1.y - n2.y, n1.x - n2.x);
   if (this.angle2 < 0) this.angle2+=TWO_PI;
+};
 
-  this.draw = function() 
-  {
-    line(this.node1.x,this.node1.y, this.node2.x,this.node2.y);
-  };
+// Accessors
+Edge.prototype.getNode1 = function() { return this.node1; };
+Edge.prototype.getNode2 = function() { return this.node2; };
 
-  this.toString = function()
-  {
-    return "Edge: "+this.node1+", "+this.node2;
-  };
 
-  this.angle = function(n) 
-  {
-    // return the angle of the edge at Node n
-    if (n==this.node1) return this.angle1; else return this.angle2;
-  };
+Edge.prototype.draw = function()
+{
+  line(this.node1.x,this.node1.y, this.node2.x,this.node2.y);
+};
 
-  this.other_node = function(n) 
-  {
-    if (n==this.node1) return this.node2; else return this.node1;
-  };
+Edge.prototype.toString = function()
+{
+  return "Edge: "+this.node1+", "+this.node2;
+};
 
-  this.angle_to = function(e2, node, direction)
-  {
-    /* returns the absolute angle from this edge to "edge2" around
-       "node" following "direction" */
-    var a;
+Edge.prototype.angle = function(n)
+{
+  // return the angle of the edge at Node n
+  if (n==this.node1) return this.angle1; else return this.angle2;
+};
 
-    if (direction===CLOCKWISE)
-      a=this.angle(node) - e2.angle(node);
-    else
-      a=e2.angle(node) - this.angle(node);
+Edge.prototype.other_node = function(n)
+{
+  if (n==this.node1) return this.node2; else return this.node1;
+};
 
-    if (a<0) return a+2*PI; else return a;
-  };
-}
+Edge.prototype.angle_to = function(e2, node, direction)
+{
+  /* returns the absolute angle from this edge to "edge2" around
+   "node" following "direction" */
+  var a;
+
+  if (direction===CLOCKWISE)
+    a=this.angle(node) - e2.angle(node);
+  else
+    a=e2.angle(node) - this.angle(node);
+
+  if (a<0) return a+2*PI; else return a;
+};
+
 
 //======================================================================
 
-function EdgeCouple(nb_edges) 
+function EdgeCouple(nb_edges)
 {
   this.size = nb_edges;
   this.array = new Array(this.size);
-  
+
   for (var i=0;i<this.size;i++) {
     this.array[i] = new Array(2);
     this.array[i][0] = 0;
@@ -117,51 +123,48 @@ function EdgeCouple(nb_edges)
   }
 }
 
+// Accessors
+EdgeCouple.prototype.getSize = function() { return this.size;  };
+EdgeCouple.prototype.getArray = function() { return this.array;  };
+
 //======================================================================
 
 function EdgeDirection (edge,direction)
 {
-  var e,d;
   this.e=edge; // Edge
   this.d=direction; // int
 }
+
+EdgeDirection.prototype.getEdge = function() { return this.e; };
+EdgeDirection.prototype.setEdge = function(edge) { this.e = edge; };
+EdgeDirection.prototype.getDirection = function() { return this.d; };
+EdgeDirection.prototype.setDirection = function(direction) { this.d = direction; };
 
 //======================================================================
 
 
 function Graph(type,xmin,ymin,width,height,param1,param2) {
   this.type=type; // (TYPE_POLAR, TYPE_GRID...)
+  this.xmin = xmin;
+  this.ymin = ymin;
+  this.param1 = param1;
+  this.param2 = param2;
+  this.height = height;
   this.nodes = [];
   this.edges = [];
 
   var cx,cy,x,y,size; //float
   var grid; // array of Node
   var step,nbcol,nbrow; //int
-
-  this.add_edge = function(edge)
-  {
-    this.edges.push(edge);
-    // for each node of edge 'edge', add it to 'e'
-    edge.node1.add_edge(edge);
-    edge.node2.add_edge(edge);
-    //    System.out.println("Adding: "+e+"\n");
-  };
-
-  this.add_node = function(node) 
-  {
-    this.nodes.push(node);
-    //    System.out.println("Adding: "+n+"\n");
-  };
-
   switch (this.type) {
   case Graph.TYPE_POLAR:
-    var nbp=param1 | 0; // number of points on each orbit
-    var nbo=param2 | 0; // number of orbits
-    var os = (width<height?width:height)/(2*nbo); // orbit height 
+    var nbp=this.param1 | 0; // number of points on each orbit
+    var nbo=this.param2 | 0; // number of orbits
+    var os = (this.width<this.height?this.width:this.height)/(2*nbo); // orbit height
     var o,p, row, col; // iterator indexes
     grid = new Array(1+nbp*nbo); // array of Node
-    cx = width/2+xmin;
-    cy = height/2+ymin; // centre
+    cx = this.width/2+this.xmin;
+    cy = this.height/2+this.ymin; // centre
 
     this.add_node(grid[0]=new Node(cx,cy));
 
@@ -169,21 +172,21 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
       for (p=0;p<nbp;p++)
         this.add_node(grid[1+o*nbp+p]=new Node(cx+(o+1)*os*Math.sin(p*TWO_PI/nbp),
                                           cy+(o+1)*os*Math.cos(p*TWO_PI/nbp)));
-    
+
     // generate edges
     for (o=0;o<nbo;o++)
       for (p=0;p<nbp;p++) {
-        if (o===0) { 
+        if (o===0) {
           // link first orbit nodes with centre
           this.add_edge(new Edge(grid[1+o*nbp+p],grid[0]));
         }
-        else // link orbit nodes with lower orbit 
+        else // link orbit nodes with lower orbit
           this.add_edge(new Edge(grid[1+o*nbp+p],grid[1+(o-1)*nbp+p]));
-        // link along orbit 
+        // link along orbit
         this.add_edge(new Edge(grid[1+o*nbp+p], grid[1+o*nbp+(p+1)%nbp]));
       }
     break;
-    
+
   case Graph.TYPE_TRIANGLE:
     var edge_size=param1;
     var L=(width<height?width:height)/2.0; // circumradius of the triangle
@@ -191,7 +194,7 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
     var p2x=(cx-L*SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
     var nsteps=Math.floor(3*L/(SQRT_3*edge_size)) | 0;
     grid = new Array((nsteps+1)*(nsteps+1));
-    
+
     // create node grid
     for (row=0;row<=nsteps;row++)
       for (col=0;col<=nsteps;col++)
@@ -201,7 +204,7 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
           grid[col+row*(nsteps+1)]=new Node(x, y);
           this.add_node(grid[col+row*(nsteps+1)]);
         }
-    
+
     // create edges
     for (row=0;row<nsteps;row++)
       for (col=0;col<nsteps;col++)
@@ -214,45 +217,45 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
           this.add_edge(new Edge(grid[row+1+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
         }
     break;
-    
+
   case Graph.TYPE_KENNICOTT:
     // make a graph inspired by one of the motifs from the Kennicott bible
     // square grid of clusters of the shape  /|\
     //                                       ---
     //                                       \|/
     // cluster_size is the length of an edge of a cluster
-    
+
     step=param1;
     var cluster_size=param2;
     size=width<height?height:width;
     nbcol=Math.floor((1+size/step)/2*2) | 0; //@@ was (int)((1+size/step)/2*2)
     nbrow=Math.floor((1+size/step)/2*2) | 0;
     grid = new Array(5*nbrow*nbcol);   /* there are 5 nodes in each cluster */
-    
+
     /* adjust xmin and xmax so that the grid is centred */
     xmin+=(width-(nbcol-1)*step)/2;
     ymin+=(height-(nbrow-1)*step)/2;
-    
+
     /* create node grid */
     for (row=0;row<nbrow;row++)
       for (col=0;col<nbcol;col++) {
         var ci=5*(row+col*nbrow);
         x=col*step+xmin;
         y=row*step+ymin;
-        
+
         /* create a cluster centred on x,y */
         grid[ci  ]=new Node(x, y);
         grid[ci+1]=new Node((x+cluster_size), y);
         grid[ci+2]=new Node(x, (y-cluster_size));
         grid[ci+3]=new Node((x-cluster_size), y);
         grid[ci+4]=new Node(x, (y+cluster_size));
-        
+
         this.add_node(grid[ci]);
         this.add_node(grid[ci+1]);
         this.add_node(grid[ci+2]);
         this.add_node(grid[ci+3]);
         this.add_node(grid[ci+4]);
-        
+
         /* internal edges */
         this.add_edge(new Edge(grid[ci], grid[ci+1]));
         this.add_edge(new Edge(grid[ci], grid[ci+2]));
@@ -262,9 +265,9 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
         this.add_edge(new Edge(grid[ci+2], grid[ci+3]));
         this.add_edge(new Edge(grid[ci+3], grid[ci+4]));
         this.add_edge(new Edge(grid[ci+4], grid[ci+1]));
-        
+
       }
-    
+
     // create inter-cluster edges
     for (row=0;row<nbrow;row++)
       for (col=0;col<nbcol;col++) {
@@ -278,25 +281,25 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
           this.add_edge(new Edge(grid[5*(row+col*nbrow)+4], grid[5*(row+1+col*nbrow)+2]));
       }
     break;
-    
+
   case Graph.TYPE_TGRID:
     // simple grid graph
     step=param1; //was (int)param1
     size=width<height?height:width;
-    
+
     // empirically, it seems there are 2 curves only if both
     // nbcol and nbrow are even, so we round them to even
     nbcol=Math.floor((2+size/step)/2*2); //@@ /2*2?
     nbrow=Math.floor((2+size/step)/2*2);
     // was: nbcol=(int)((2+size/step)/2*2);
     //      nbrow=(int)((2+size/step)/2*2);
-    
+
     grid = new Array((nbrow*nbcol)|0);
-    
+
     /* adjust xmin and xmax so that the grid is centered */
     xmin+=(width-(nbcol-1)*step)/2;
     ymin+=(height-(nbrow-1)*step)/2;
-    
+
     /* create node grid */
     for (row=0;row<nbrow;row++)
       for (col=0;col<nbcol;col++) {
@@ -305,7 +308,7 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
         grid[row+col*nbrow]=new Node(x, y);
         this.add_node(grid[row+col*nbrow]);
       }
-    
+
     /* create edges */
     for (row=0;row<nbrow;row++)
       for (col=0;col<nbcol;col++) {
@@ -328,56 +331,73 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
 //    this.add_edge(new Edge(node2,node3));
 //    this.add_edge(new Edge(node3,node1));
   }
+};
+
+Graph.prototype.add_edge = function(edge)
+{
+  this.edges.push(edge);
+  // for each node of edge 'edge', add it to 'e'
+  edge.getNode1().add_edge(edge);
+  edge.getNode2().add_edge(edge);
+  //    System.out.println("Adding: "+e+"\n");
+};
+
+Graph.prototype.add_node = function(node)
+{
+  this.nodes.push(node);
+  //    System.out.println("Adding: "+n+"\n");
+};
 
 
-  this.next_edge_around = function(n, ed) {
-    // return the next edge after e around node n clockwise
-    var angle, minangle=20;
-    var next_edge = ed.e, edge;
-    for (var i=0;i<n.edges.length;i++) {
-      edge=n.edges[i];
-       if (edge != ed.e) {
-         angle = ed.e.angle_to(edge,n,ed.d);
-         if (angle < minangle) {
-           next_edge=edge;
-           minangle=angle;
-         }
-       }
-     }
-    return next_edge;
-  };
 
-  this.draw = function() 
-  {
-    var i;
-    g_ctx.strokeStyle = "rgb(0,0,0)";
-    for (i=0;i<this.nodes.length;i++) this.nodes[i].draw();
-    for (i=0;i<this.edges.length;i++) this.edges[i].draw();
-  };
-
-  this.toString = function()
-  {
-    var i;
-    var s="Graph: ";
-    s+="\n- "+nodes.length+" Nodes: ";
-    for (i=0;i<nodes.length;i++) s+=nodes[i].toString();
-    s+="\n- "+edges.length+" Edges: ";
-    for (i=0;i<edges.length;i++) s+=edges[i].toString();
-    return s;
-  };
-
-  this.rotate = function(angle, cx, cy) {
-    // rotate all the nodes of this graph around point (cx,cy)
-    var c=Math.cos(angle), s=Math.sin(angle), x, y;
-    var n;
-    for (var i=0;i<this.nodes.length;i++) {
-      n=this.nodes[i];
-      x=n.x; y=n.y;
-      n.x = (x-cx)*c-(y-cy)*s + cx;
-      n.y = (x-cx)*s+(y-cy)*c + cy;
+Graph.prototype.next_edge_around = function(n, ed) {
+  // return the next edge after e around node n clockwise
+  var angle, minangle=20;
+  var next_edge = ed.getEdge(), edge;
+  for (var i=0;i<n.edges.length;i++) {
+    edge=n.edges[i];
+    if (edge != ed.getEdge()) {
+      angle = ed.getEdge().angle_to(edge,n,ed.getDirection());
+      if (angle < minangle) {
+        next_edge=edge;
+        minangle=angle;
+      }
     }
-  };
-}
+  }
+return next_edge;
+};
+
+Graph.prototype.draw = function()
+{
+  var i;
+  g_ctx.strokeStyle = "rgb(0,0,0)";
+  for (i=0;i<this.nodes.length;i++) this.nodes[i].draw();
+  for (i=0;i<this.edges.length;i++) this.edges[i].draw();
+};
+
+Graph.prototype.toString = function()
+{
+  var i;
+  var s="Graph: ";
+  s+="\n- "+nodes.length+" Nodes: ";
+  for (i=0;i<nodes.length;i++) s+=nodes[i].toString();
+  s+="\n- "+edges.length+" Edges: ";
+  for (i=0;i<edges.length;i++) s+=edges[i].toString();
+  return s;
+};
+
+Graph.prototype.rotate = function(angle, cx, cy)
+{
+  // rotate all the nodes of this graph around point (cx,cy)
+  var c=Math.cos(angle), s=Math.sin(angle), x, y;
+  var n;
+  for (var i=0;i<this.nodes.length;i++) {
+    n=this.nodes[i];
+    x=n.x; y=n.y;
+    n.x = (x-cx)*c-(y-cy)*s + cx;
+    n.y = (x-cx)*s+(y-cy)*c + cy;
+  }
+};
 
 Graph.TYPE_POLAR=0;
 Graph.TYPE_TGRID=1;
@@ -395,22 +415,23 @@ function Node(x,y)
   this.x=x;
   this.y=y;
   this.edges = [];
+}
 
-  this.draw = function() 
-  {
-    circle(this.x, this.y, 4.0);
-  };
-
-  this.toString = function()
-  {
-    return "Node: ("+this.x+","+this.y+")";
-  };
-
-  this.add_edge = function(e)
-  {
-    this.edges.push(e);
-  };
+Node.prototype.draw = function()
+{
+  circle(this.x, this.y, 4.0);
 };
+
+Node.prototype.toString = function()
+{
+  return "Node: ("+this.x+","+this.y+")";
+};
+
+Node.prototype.add_edge = function(e)
+{
+  this.edges.push(e);
+};
+
 
 //================================================================================
 
@@ -437,24 +458,25 @@ function Pattern(new_t, new_g, new_shape1, new_shape2) {
   this.shape2=new_shape2;
   this.graph=new_g;
   this.ec=new EdgeCouple(new_g.edges.length);
+}
 
-  this.edge_couple_set = function(ed, value)
+Pattern.prototype.edge_couple_set = function(ed, value)
   {
     for (var i=0;i<this.graph.edges.length;i++)
-      if (this.graph.edges[i]==ed.e) {
-        this.ec.array[i][ed.d]=value;
+      if (this.graph.edges[i]==ed.getEdge()) {
+        this.ec.getArray()[i][ed.getDirection()]=value;
         return;
       }
   };
 
-  this.draw_spline_direction = function(s, node, edge1, edge2, direction)
+Pattern.prototype.draw_spline_direction = function(s, node, edge1, edge2, direction)
   {
-    var x1=(edge1.node1.x+edge1.node2.x)/2.0;
-    var y1=(edge1.node1.y+edge1.node2.y)/2.0;
+    var x1=(edge1.getNode1().x+edge1.getNode2().x)/2.0;
+    var y1=(edge1.getNode1().y+edge1.getNode2().y)/2.0;
 
     // P2 (x2,y2) is the middle point of edge1
-    var x4=(edge2.node1.x+edge2.node2.x)/2.0;
-    var y4=(edge2.node1.y+edge2.node2.y)/2.0;
+    var x4=(edge2.getNode1().x+edge2.getNode2().x)/2.0;
+    var y4=(edge2.getNode1().y+edge2.getNode2().y)/2.0;
 
     var alpha=edge1.angle_to(edge2,node,direction)*this.shape1;
     var beta=this.shape2;
@@ -487,15 +509,15 @@ function Pattern(new_t, new_g, new_shape1, new_shape2) {
   };
 
 
-  this.next_unfilled_couple = function()
+Pattern.prototype.next_unfilled_couple = function()
   {
     var ed=null; //EdgeDirection
-    for (var i=0;i<this.ec.size;i++) {
-      if (this.ec.array[i][CLOCKWISE]==0) {
+    for (var i=0;i<this.ec.getSize();i++) {
+      if (this.ec.getArray()[i][CLOCKWISE]==0) {
         ed = new EdgeDirection(this.graph.edges[i], CLOCKWISE);
         return ed;
       }
-      else if (this.ec.array[i][ANTICLOCKWISE]==0) {
+      else if (this.ec.getArray()[i][ANTICLOCKWISE]==0) {
         ed = new EdgeDirection(this.graph.edges[i], ANTICLOCKWISE);
         return ed;
       }
@@ -503,7 +525,7 @@ function Pattern(new_t, new_g, new_shape1, new_shape2) {
     return ed; // possibly null if no edge found
   };
 
-  this.make_curves = function()
+Pattern.prototype.make_curves = function()
   {
     var i;
     var current_edge, first_edge, next_edge;
@@ -518,41 +540,41 @@ function Pattern(new_t, new_g, new_shape1, new_shape2) {
       s=new Spline(random(100,255), random(100,255), random(100,255));
       this.splines.push(s);
 
-      current_edge_direction = new EdgeDirection(first_edge_direction.e,
-                                                 first_edge_direction.d);
-      current_node=first_node=current_edge_direction.e.node1;
+      current_edge_direction = new EdgeDirection(first_edge_direction.getEdge(),
+                                                 first_edge_direction.getDirection());
+      current_node=first_node=current_edge_direction.getEdge().getNode1();
 
       do {
         this.edge_couple_set(current_edge_direction, 1);
         next_edge = this.graph.next_edge_around(current_node,current_edge_direction);
 
         // add the spline segment to the spline
-        this.draw_spline_direction(s,current_node, current_edge_direction.e, next_edge, current_edge_direction.d);
+        this.draw_spline_direction(s,current_node, current_edge_direction.getEdge(), next_edge, current_edge_direction.getDirection());
 
         // cross the edge
-        current_edge_direction.e = next_edge;
+        current_edge_direction.setEdge(next_edge);
         current_node = next_edge.other_node(current_node);
-        current_edge_direction.d = 1-current_edge_direction.d;
+        current_edge_direction.setDirection(1-current_edge_direction.getDirection());
 
       } while (current_node!=first_node ||
-               current_edge_direction.e!=first_edge_direction.e ||
-               current_edge_direction.d!=first_edge_direction.d);
+               current_edge_direction.getEdge()!=first_edge_direction.getEdge() ||
+               current_edge_direction.getDirection()!=first_edge_direction.getDirection());
       if (s.segments.length==2) // spline is just one point: remove it
         this.splines.splice(this.splines.length-1,1);
     }
   };
-}
+
 
 //================================================================================
 
-function Point(x, y) 
+function Point(x, y)
 {
   this.x=x;
   this.y=y;
 }
 
 //================================================================================
- 
+
 function PointIndex(new_x,new_y,new_i) {
   // Typically one point of a spline and the segment index of the spline that
   // the point is on
@@ -567,13 +589,14 @@ function Spline(red,green,blue) {
   this.red=red;
   this.green=green;
   this.blue=blue;
+}
 
-  this.add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
+Spline.prototype.add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
   {
     this.segments.push(new SplineSegment(x1,y1,x2,y2,x3,y3,x4,y4));
   };
 
-  this.value_at = function(t)
+Spline.prototype.value_at = function(t)
   {
     var si;
     var tt;
@@ -589,14 +612,14 @@ function Spline(red,green,blue) {
                           si);
   };
 
-  this.draw = function() {
+Spline.prototype.draw = function() {
     //    System.out.println("=== spline ===");
     for (var i=0;i<this.segments.length;i++) {
       var s=this.segments[i];
       s.draw();
     }
   };
-}
+
 
 //================================================================================
 
@@ -760,7 +783,7 @@ var s;
 var pi1, pi2, pi3, pi4;
 var start, end; // colors
 
-function setup() 
+function setup()
 {
   myinit();
   t=0;
@@ -777,7 +800,7 @@ function draw() {
     s=st.pattern.splines[i];
     //    s.draw();
 
-    if (s != null) { // skip if one-point spline 
+    if (s != null) { // skip if one-point spline
       pi1=s.value_at(t);
       pi2=s.value_at(t2);
       //      stroke(s.r, s.g, s.b);
