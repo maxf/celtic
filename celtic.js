@@ -79,7 +79,7 @@ function Edge(n1,n2) {
 
   this.toString = function()
   {
-    return "Edge: "+node1+", "+node2;
+    return "Edge: {node1: "+node1+", node2: "+node2+"}";
   };
 
   this.angle = function(n)
@@ -133,14 +133,16 @@ EdgeCouple.prototype.getArray = function() { return this.array;  };
 
 function EdgeDirection (edge,direction)
 {
-  this.e=edge; // Edge
-  this.d=direction; // int
+  var e=edge; // Edge
+  var d=direction; // int
+
+  this.getEdge = function() { return e; };
+  this.setEdge = function(edge) { e = edge; };
+  this.getDirection = function() { return d; };
+  this.setDirection = function(direction) { d = direction; };
+  this.toString = function() { return "EdgeDirection {e: "+e+", d:"+direction+"}"; };
 }
 
-EdgeDirection.prototype.getEdge = function() { return this.e; };
-EdgeDirection.prototype.setEdge = function(edge) { this.e = edge; };
-EdgeDirection.prototype.getDirection = function() { return this.d; };
-EdgeDirection.prototype.setDirection = function(direction) { this.d = direction; };
 
 //======================================================================
 
@@ -460,6 +462,14 @@ function Pattern(new_t, new_g, new_shape1, new_shape2) {
   this.shape2=new_shape2;
   this.graph=new_g;
   this.ec=new EdgeCouple(new_g.edges.length);
+
+  this.toString = function() {
+    var result="Pattern: { splines: [";
+    for (var i=0;i<this.splines.length;i++) {
+      result+=this.splines[i];
+    }
+    return result+"]}";
+  };
 }
 
 Pattern.prototype.edge_couple_set = function(ed, value)
@@ -529,14 +539,13 @@ Pattern.prototype.next_unfilled_couple = function()
 
 Pattern.prototype.make_curves = function()
   {
-    var i;
+    var i=0;
     var current_edge, first_edge, next_edge;
     var current_node, first_node;
     var current_direction, first_direction;
     var s; //Spline
     var first_edge_direction, current_edge_direction;
 
-    i=0;
     while ((first_edge_direction=this.next_unfilled_couple())!=null) {
       // start a new loop
       s=new Spline(random(100,255), random(100,255), random(100,255));
