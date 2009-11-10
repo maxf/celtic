@@ -60,52 +60,54 @@ function line(x1,y1, x2,y2)
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function Edge(n1,n2) {
-  this.node1=n1;
-  this.node2=n2;
-  this.angle1=Math.atan2(n2.y - n1.y, n2.x - n1.x);
-  if (this.angle1 < 0) this.angle1+=TWO_PI;
-  this.angle2=Math.atan2(n1.y - n2.y, n1.x - n2.x);
-  if (this.angle2 < 0) this.angle2+=TWO_PI;
-};
+  var node1 = n1;
+  var node2 = n2;
 
-// Accessors
-Edge.prototype.getNode1 = function() { return this.node1; };
-Edge.prototype.getNode2 = function() { return this.node2; };
+  var angle1=Math.atan2(n2.y - n1.y, n2.x - n1.x);
+  if (angle1 < 0) angle1+=TWO_PI;
+  var angle2=Math.atan2(n1.y - n2.y, n1.x - n2.x);
+  if (angle2 < 0) angle2+=TWO_PI;
+
+  // Accessors
+  this.getNode1 = function() { return node1; };
+  this.getNode2 = function() { return node2; };
+
+  this.draw = function()
+  {
+    line(node1.x,node1.y, node2.x,node2.y);
+  };
+
+  this.toString = function()
+  {
+    return "Edge: "+node1+", "+node2;
+  };
+
+  this.angle = function(n)
+  {
+    // return the angle of the edge at Node n
+    if (n==node1) return angle1; else return angle2;
+  };
+
+  this.other_node = function(n)
+  {
+    if (n==node1) return node2; else return node1;
+  };
+
+  this.angle_to = function(e2, node, direction)
+  {
+    /* returns the absolute angle from this edge to "edge2" around
+     "node" following "direction" */
+    var a;
+
+    if (direction===CLOCKWISE)
+      a=this.angle(node) - e2.angle(node);
+    else
+      a=e2.angle(node) - this.angle(node);
+
+    if (a<0) return a+2*PI; else return a;
+  };
 
 
-Edge.prototype.draw = function()
-{
-  line(this.node1.x,this.node1.y, this.node2.x,this.node2.y);
-};
-
-Edge.prototype.toString = function()
-{
-  return "Edge: "+this.node1+", "+this.node2;
-};
-
-Edge.prototype.angle = function(n)
-{
-  // return the angle of the edge at Node n
-  if (n==this.node1) return this.angle1; else return this.angle2;
-};
-
-Edge.prototype.other_node = function(n)
-{
-  if (n==this.node1) return this.node2; else return this.node1;
-};
-
-Edge.prototype.angle_to = function(e2, node, direction)
-{
-  /* returns the absolute angle from this edge to "edge2" around
-   "node" following "direction" */
-  var a;
-
-  if (direction===CLOCKWISE)
-    a=this.angle(node) - e2.angle(node);
-  else
-    a=e2.angle(node) - this.angle(node);
-
-  if (a<0) return a+2*PI; else return a;
 };
 
 
