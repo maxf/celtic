@@ -143,7 +143,7 @@ function EdgeDirection (edge,direction)
   this.setEdge = function(edge) { e = edge; };
   this.getDirection = function() { return d; };
   this.setDirection = function(direction) { d = direction; };
-  this.toString = function() { return "EdgeDirection {e: "+e+", d:"+direction+"}"; };
+  this.toString = function() { return "EdgeDirection {e: "+e+", d:"+(direction===0?"CLOCKWISE":"ANTICLOCKWISE")+"}"; };
 }
 
 
@@ -387,10 +387,10 @@ Graph.prototype.toString = function()
 {
   var i;
   var s="Graph: ";
-  s+="\n- "+nodes.length+" Nodes: ";
-  for (i=0;i<nodes.length;i++) s+=nodes[i].toString();
-  s+="\n- "+edges.length+" Edges: ";
-  for (i=0;i<edges.length;i++) s+=edges[i].toString();
+  s+="\n- "+this.nodes.length+" nodes: ";
+  for (i=0;i<this.nodes.length;i++) s+=this.nodes[i]+", ";
+  s+="\n- "+this.edges.length+" edges: ";
+  for (i=0;i<this.edges.length;i++) s+=this.edges[i]+", ";
   return s;
 };
 
@@ -438,7 +438,7 @@ function Node(new_x, new_y)
 
   this.toString = function()
   {
-    return "Node: ("+x+","+y+")";
+    return "Node: {x:"+x+", y:"+y+"}";
   };
 
   this.add_edge = function(e)
@@ -462,36 +462,43 @@ function Params()
   var nb_orbits;          /* only used if type is polar */
   var nb_nodes_per_orbit; /* only used if type is polar */
   var angle; /* angle of rotation of the graph around the centre */
+
+  this.getShape1 = function() { return shape1; };
+  this.getShape2 = function() { return shape2; };
+
 };
 
 //================================================================================
 
-function Pattern(new_t, new_g, new_shape1, new_shape2) {
-  this.splines = [];
-  this.shape1=new_shape1;
-  this.shape2=new_shape2;
-  this.graph=new_g;
-  this.ec=new EdgeCouple(new_g.edges.length);
+// A Pattern is a set of closed curves that form a motif
+function Pattern(new_st, new_g, new_shape1, new_shape2) {
+  var splines = [];
+  var shape1=new_shape1;
+  var shape2=new_shape2;
+  var graph=new_g;
+  var ec=new EdgeCouple(new_g.edges.length);
+
+  this.getSplines = function() { return splines; };
 
   this.toString = function() {
     var result="Pattern: { splines: [";
-    for (var i=0;i<this.splines.length;i++) {
-      result+=this.splines[i];
+    for (var i=0;i<splines.length;i++) {
+      result+=splines[i];
     }
     return result+"]}";
   };
-}
 
-Pattern.prototype.edge_couple_set = function(ed, value)
+  this.edge_couple_set = function(ed, value)
   {
-    for (var i=0;i<this.graph.edges.length;i++)
-      if (this.graph.edges[i]==ed.getEdge()) {
-        this.ec.getArray()[i][ed.getDirection()]=value;
+    for (var i=0;i<graph.edges.length;i++)
+      if (graph.edges[i]==ed.getEdge()) {
+        ec.getArray()[i][ed.getDirection()]=value;
         return;
       }
   };
 
-Pattern.prototype.draw_spline_direction = function(s, node, edge1, edge2, direction)
+  // Add a Bezier curve to a spline (s)
+  this.draw_spline_direction = function(s, node, edge1, edge2, direction)
   {
     var x1=(edge1.getNode1().getX()+edge1.getNode2().getX())/2.0;
     var y1=(edge1.getNode1().getY()+edge1.getNode2().getY())/2.0;
@@ -500,8 +507,8 @@ Pattern.prototype.draw_spline_direction = function(s, node, edge1, edge2, direct
     var x4=(edge2.getNode1().getX()+edge2.getNode2().getX())/2.0;
     var y4=(edge2.getNode1().getY()+edge2.getNode2().getY())/2.0;
 
-    var alpha=edge1.angle_to(edge2,node,direction)*this.shape1;
-    var beta=this.shape2;
+    var alpha=edge1.angle_to(edge2,node,direction)*shape1;
+    var beta=shape2;
 
     var i1x,i1y,i2x,i2y,x2,y2,x3,y3;
 
@@ -527,28 +534,27 @@ Pattern.prototype.draw_spline_direction = function(s, node, edge1, edge2, direct
       x3 =  beta*(y4-i2y) + i2x;
       y3 = -beta*(x4-i2x) + i2y;
     }
-    print("adding sement");
     s.add_segment(x1,y1,x2,y2,x3,y3,x4,y4);
   };
 
 
-Pattern.prototype.next_unfilled_couple = function()
+  this.next_unfilled_couple = function()
   {
     var ed=null; //EdgeDirection
-    for (var i=0;i<this.ec.getSize();i++) {
-      if (this.ec.getArray()[i][CLOCKWISE]==0) {
-        ed = new EdgeDirection(this.graph.edges[i], CLOCKWISE);
+    for (var i=0;i<ec.getSize();i++) {
+      if (ec.getArray()[i][CLOCKWISE]==0) {
+        ed = new EdgeDirection(graph.edges[i], CLOCKWISE);
         return ed;
       }
-      else if (this.ec.getArray()[i][ANTICLOCKWISE]==0) {
-        ed = new EdgeDirection(this.graph.edges[i], ANTICLOCKWISE);
+      else if (ec.getArray()[i][ANTICLOCKWISE]==0) {
+        ed = new EdgeDirection(graph.edges[i], ANTICLOCKWISE);
         return ed;
       }
     }
     return ed; // possibly null if no edge found
   };
 
-Pattern.prototype.make_curves = function()
+  this.make_curves = function()
   {
     var i=0;
     var current_edge, first_edge, next_edge;
@@ -558,9 +564,9 @@ Pattern.prototype.make_curves = function()
     var first_edge_direction, current_edge_direction;
 
     while ((first_edge_direction=this.next_unfilled_couple())!=null) {
+      print("first_edge_direction: "+first_edge_direction);
       // start a new loop
       s=new Spline(random(100,255), random(100,255), random(100,255));
-      this.splines.push(s);
 
       current_edge_direction = new EdgeDirection(first_edge_direction.getEdge(),
                                                  first_edge_direction.getDirection());
@@ -568,7 +574,7 @@ Pattern.prototype.make_curves = function()
 
       do {
         this.edge_couple_set(current_edge_direction, 1);
-        next_edge = this.graph.next_edge_around(current_node,current_edge_direction);
+        next_edge = graph.next_edge_around(current_node,current_edge_direction);
 
         // add the spline segment to the spline
         this.draw_spline_direction(s,current_node, current_edge_direction.getEdge(), next_edge, current_edge_direction.getDirection());
@@ -581,13 +587,14 @@ Pattern.prototype.make_curves = function()
       } while (current_node!=first_node ||
                current_edge_direction.e!=first_edge_direction.e ||
                current_edge_direction.d!=first_edge_direction.d);
-      print("2="+this.splines.length);
-//      if (s.segments.length==2) // spline is just one point: remove it
-//        this.splines.splice(this.splines.length-1,1);
-      print("3="+this.splines.length);
+//      print("2="+this.splines.length);
+      if (s.getSegments().length>2) // spline is just one point: remove it
+        splines.push(s);
+
+//      print("3="+this.splines.length);
     }
   };
-
+};
 
 //================================================================================
 
@@ -620,9 +627,13 @@ function Spline(new_red,new_green,new_blue) {
   var green=new_green;
   var blue=new_blue;
 
+  this.getSegments = function() { return segments; };
+
   this.add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
   {
-    segments.push(new SplineSegment(x1,y1,x2,y2,x3,y3,x4,y4));
+    var bezier = new CubicBezierCurve(x1,y1,x2,y2,x3,y3,x4,y4);
+    print("adding: "+bezier);
+    segments.push(bezier);
   };
 
   this.value_at = function(t)
@@ -658,7 +669,8 @@ function Spline(new_red,new_green,new_blue) {
 
 //================================================================================
 
-function SplineSegment(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, new_y4) {
+function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, new_y4) {
+  // A Bezier spline segment: with 4 control points
   var x1,y1,x2,y2,x3,y3,x4,y4;
 
   x1=new_x1; y1=new_y1;
@@ -674,7 +686,11 @@ function SplineSegment(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, n
     line(x1,y1, x2,y2);
     line(x2,y2, x3,y3);
     line(x3,y3, x4,y4);
-    //    print("segment: "+this.x1+","+this.y1+" = "+this.x2+","+this.y2+" = "+this.x3+","+this.y3+" = "+this.x4+","+this.y4);
+  };
+
+  this.toString = function() {
+    return "CubicBezierCurve { "+x1+","+y1+" = "+x2+","+y2+" = "+x3+","+y3+" = "+x4+","+y4+"}";
+
   };
 }
 
@@ -780,6 +796,7 @@ function State()
     }
 
 //  graph.rotate(st.params.angle,WIDTH/2,HEIGHT/2);
+  print("Graph: "+graph);
 
   pattern=new Pattern(st, graph, params.shape1, params.shape2);
   pattern.make_curves();
@@ -815,7 +832,7 @@ function circle(cx,cy,radius)
 
 //===========================================================================
 
-var st=new State(); // State
+var st=new State();
 var t,t2; //float
 var s;
 var pi1, pi2, pi3, pi4;
@@ -834,9 +851,9 @@ function draw() {
     t2 = (t+st.getStep()>1.0) ? 1.0 : t+st.getStep();
 
     //  print("t: "+t+", t2: "+t2);
-    for (var i=0;i<st.getPattern().splines.length;i++) {
+    for (var i=0;i<st.getPattern().getSplines().length;i++) {
 
-      s=st.getPattern().splines[i];
+      s=st.getPattern().getSplines()[i];
       //    s.draw();
 
       if (s != null) { // skip if one-point spline 
@@ -853,7 +870,7 @@ function draw() {
         //      else
         //        stroke(s.r, s.g, s.b);
         var p1=pi1.getPoint(), p2=pi2.getPoint();
-print(p1)
+print(p1);
         line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
       //      speed = sqrt((pi2.p.getX()-pi1.p.getX())*(pi2.p.getX()-pi1.p.getX())+(pi2.p.getY()-pi1.p.getY())*(pi2.p.getY()-pi1.p.getY()));
       //      ellipse((pi2.p.getX()+pi1.p.getX())/2, (pi2.p.getY()+pi1.p.getY())/2, speed, speed);
