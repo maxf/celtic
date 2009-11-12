@@ -26,9 +26,14 @@ var b = 0;
 
 // return a number in [min, max[
 // <http://processing.org/reference/random_.html>
-function random(min,max)
+function randomFloat(min,max)
 {
   return Math.random()*(max-min) + min;
+};
+
+function randomInt(min,max)
+{
+  return Math.floor(Math.random()*(max-min) + min) | 0;
 };
 
 function colorMode(mode)
@@ -52,6 +57,7 @@ function strokeWeight(weight)
 // <http://processing.org/reference/line_.html>
 function line(x1,y1, x2,y2)
 {
+//  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
   g_ctx.beginPath();
   g_ctx.moveTo(x1,y1);
   g_ctx.lineTo(x2,y2);
@@ -118,19 +124,21 @@ function Edge(n1,n2) {
 
 function EdgeCouple(nb_edges)
 {
-  this.size = nb_edges;
-  this.array = new Array(this.size);
+  var size = nb_edges;
+  var array = new Array(size);
 
-  for (var i=0;i<this.size;i++) {
-    this.array[i] = new Array(2);
-    this.array[i][0] = 0;
-    this.array[i][1] = 0;
+  // Accessors
+  this.getSize = function() { return size;  };
+  this.getArray = function() { return array;  };
+
+  // constructor
+  for (var i=0;i<size;i++) {
+    array[i] = new Array(2);
+    array[i][CLOCKWISE] = 0;
+    array[i][ANTICLOCKWISE] = 0;
   }
 }
 
-// Accessors
-EdgeCouple.prototype.getSize = function() { return this.size;  };
-EdgeCouple.prototype.getArray = function() { return this.array;  };
 
 //======================================================================
 
@@ -157,6 +165,7 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
   this.param1 = param1;
   this.param2 = param2;
   this.height = height;
+  this.width = width;
   this.nodes = [];
   this.edges = [];
 
@@ -348,11 +357,11 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
     case Graph.TYPE_CUSTOM:
     var node1=new Node(50,50); this.add_node(node1);
     var node2=new Node(50,100); this.add_node(node2);
-//    var node3=new Node(100,100); this.add_node(node3);
+    var node3=new Node(100,100); this.add_node(node3);
 
     this.add_edge(new Edge(node1,node2));
-//    this.add_edge(new Edge(node2,node3));
-//    this.add_edge(new Edge(node3,node1));
+    this.add_edge(new Edge(node2,node3));
+    this.add_edge(new Edge(node3,node1));
   }
 };
 
@@ -488,22 +497,40 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
     return result+"]}";
   };
 
-  this.edge_couple_set = function(ed, value)
+  this.edge_couple_set = function(edgeDirection, value)
   {
     for (var i=0;i<graph.edges.length;i++)
-      if (graph.edges[i]==ed.getEdge()) {
-        ec.getArray()[i][ed.getDirection()]=value;
+      if (graph.edges[i]==edgeDirection.getEdge()) {
+        ec.getArray()[i][edgeDirection.getDirection()]=value;
         return;
       }
   };
 
-  // Add a Bezier curve to a spline (s)
-  this.draw_spline_direction = function(s, node, edge1, edge2, direction)
+  // Add a cubic Bezier curve segment to a spline (s)
+  this.addBezierCurve = function(s, node, edge1, edge2, direction)
   {
+    // Parameters:
+    // - s: the spline to add the Bezier to
+    // - node: a node
+    // - edge1: an edge which must include 'node' as one of its nodes
+    // - edge2: ditto
+    // - direction: whether the bezier should go clockwise or anticlockwise around the node
+    //
+    //   *-----------------*--------------*
+    //         edge1      node   edge2
+
+
+    // The 4 control points are:
+    // (x1,y1) the midpoint of edge1
+    // (x2,y2) a complicated function of the pattern's shape parameters, the direction, and the angle between edge1 and edge2
+    // (x3,y3) ditto.
+    // (x4,y4) the midpoint of edge2
+
+//    print("addBezierCurve(s :"+s+", node: "+node+", edge1: "+edge1+", edge2: "+edge2+", direction: "+direction);
+
     var x1=(edge1.getNode1().getX()+edge1.getNode2().getX())/2.0;
     var y1=(edge1.getNode1().getY()+edge1.getNode2().getY())/2.0;
 
-    // P2 (x2,y2) is the middle point of edge1
     var x4=(edge2.getNode1().getX()+edge2.getNode2().getX())/2.0;
     var y4=(edge2.getNode1().getY()+edge2.getNode2().getY())/2.0;
 
@@ -512,8 +539,9 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
 
     var i1x,i1y,i2x,i2y,x2,y2,x3,y3;
 
-    if (direction == ANTICLOCKWISE) {
-      // I1 must stick out to the left of NP1 and I2 to the right of NP4
+    switch(direction) {
+    case ANTICLOCKWISE:
+      // (i1x,i2x) must stick out to the left of NP1 and I2 to the right of NP4
       i1x =  alpha*(node.getY()-y1)+x1;
       i1y = -alpha*(node.getX()-x1)+y1;
       i2x = -alpha*(node.getY()-y4)+x4;
@@ -522,8 +550,8 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
       y2 = -beta*(x1-i1x) + i1y;
       x3 = -beta*(y4-i2y) + i2x;
       y3 =  beta*(x4-i2x) + i2y;
-    }
-    else {
+      break;
+    case CLOCKWISE:
       // I1 must stick out to the left of NP1 and I2 to the right of NP4
       i1x = -alpha*(node.getY()-y1)+x1;
       i1y =  alpha*(node.getX()-x1)+y1;
@@ -533,7 +561,11 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
       y2 =  beta*(x1-i1x) + i1y;
       x3 =  beta*(y4-i2y) + i2x;
       y3 = -beta*(x4-i2x) + i2y;
+      break;
+    default:
+      print("Error in addBezierCurve: direction is neither CLOCKWISE nor ANTICLOCKWISE: "+direction);
     }
+//    print("adding Bezier ("+x1+","+y1+" -- "+x2+","+y2+" -- "+x3+","+y3+" -- "+x4+","+y4+")");
     s.add_segment(x1,y1,x2,y2,x3,y3,x4,y4);
   };
 
@@ -564,9 +596,8 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
     var first_edge_direction, current_edge_direction;
 
     while ((first_edge_direction=this.next_unfilled_couple())!=null) {
-      print("first_edge_direction: "+first_edge_direction);
       // start a new loop
-      s=new Spline(random(100,255), random(100,255), random(100,255));
+      s=new Spline(randomInt(100,255), randomInt(100,255), randomInt(100,255));
 
       current_edge_direction = new EdgeDirection(first_edge_direction.getEdge(),
                                                  first_edge_direction.getDirection());
@@ -577,7 +608,7 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
         next_edge = graph.next_edge_around(current_node,current_edge_direction);
 
         // add the spline segment to the spline
-        this.draw_spline_direction(s,current_node, current_edge_direction.getEdge(), next_edge, current_edge_direction.getDirection());
+        this.addBezierCurve(s,current_node, current_edge_direction.getEdge(), next_edge, current_edge_direction.getDirection());
 
         // cross the edge
         current_edge_direction.setEdge(next_edge);
@@ -602,7 +633,11 @@ function Point(new_x, new_y)
 {
   var x=new_x, y=new_y;
 
-  this.toString = function() { return "Point: {x="+x+", y="+y+"}";};    
+  //Accessors
+  this.getX = function() { return x; };
+  this.getY = function() { return y; };
+
+  this.toString = function() { return "Point: {x="+x+", y="+y+"}";};
 }
 
 //================================================================================
@@ -627,12 +662,17 @@ function Spline(new_red,new_green,new_blue) {
   var green=new_green;
   var blue=new_blue;
 
+  var cssColorString="rgb("+red+","+green+","+blue+")";
+  print("new Spline: "+cssColorString)
+  g_ctx.strokeStyle=cssColorString;
+
+  // accessors
   this.getSegments = function() { return segments; };
 
   this.add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
   {
     var bezier = new CubicBezierCurve(x1,y1,x2,y2,x3,y3,x4,y4);
-    print("adding: "+bezier);
+//    print("adding: "+bezier);
     segments.push(bezier);
   };
 
@@ -643,14 +683,14 @@ function Spline(new_red,new_green,new_blue) {
     var ss;
     si = Math.floor(t*segments.length);
     if (si==segments.length) si--;
-    print("out: "+si+", "+segments.length+", "+t+"\n");
+//    print("out: "+si+", "+segments.length+", "+t+"\n");
     tt = t*segments.length - si;
     ss=segments[si];
-    print("ss: "+ss);
-    var pi=new PointIndex(ss.x1*(1-tt)*(1-tt)*(1-tt)+3*ss.x2*tt*(1-tt)*(1-tt)+3*ss.x3*tt*tt*(1-tt)+ss.x4*tt*tt*tt,
-                          ss.y1*(1-tt)*(1-tt)*(1-tt)+3*ss.y2*tt*(1-tt)*(1-tt)+3*ss.y3*tt*tt*(1-tt)+ss.y4*tt*tt*tt,
+//    print("ss: "+ss);
+    var pi=new PointIndex(ss.getX1()*(1-tt)*(1-tt)*(1-tt)+3*ss.getX2()*tt*(1-tt)*(1-tt)+3*ss.getX3()*tt*tt*(1-tt)+ss.getX4()*tt*tt*tt,
+                          ss.getY1()*(1-tt)*(1-tt)*(1-tt)+3*ss.getY2()*tt*(1-tt)*(1-tt)+3*ss.getY3()*tt*tt*(1-tt)+ss.getY4()*tt*tt*tt,
                           si);
-    print(pi);
+//    print(pi);
     return pi;
   };
 
@@ -672,11 +712,21 @@ function Spline(new_red,new_green,new_blue) {
 function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, new_y4) {
   // A Bezier spline segment: with 4 control points
   var x1,y1,x2,y2,x3,y3,x4,y4;
-
   x1=new_x1; y1=new_y1;
   x2=new_x2; y2=new_y2;
   x3=new_x3; y3=new_y3;
   x4=new_x4; y4=new_y4;
+
+  // Accessors
+  this.getX1 = function() { return x1; };
+  this.getY1 = function() { return y1; };
+  this.getX2 = function() { return x2; };
+  this.getY2 = function() { return y2; };
+  this.getX3 = function() { return x3; };
+  this.getY3 = function() { return y3; };
+  this.getX4 = function() { return x4; };
+  this.getY4 = function() { return y4; };
+
 
   this.draw = function() {
     circle(x1, y1, 2.0);
@@ -698,7 +748,7 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 
 function State()
 {
-  var step=0.1;
+  var step=0.01;
   var showGraph; //Boolean
   var pattern;
   var graph;
@@ -713,27 +763,38 @@ function State()
   this.getGraph = function() { return graph; };
 
   // Constructor
-  params.curve_width=random(4,10);
+  params.curve_width=randomFloat(4,10);
   params.shadow_width=params.curve_width+4;
-  //  params.shape1=random(.5,2);
-  //  params.shape2=random(.5,2);
+  //  params.shape1=randomFloat(.5,2);
+  //  params.shape2=randomFloat(.5,2);
   params.shape1=.5;
   params.shape2=.5;
-  params.edge_size=random(20,60);
+  params.edge_size=randomFloat(20,60);
   //  params.delay=100;
   params.delay=0;
-  params.angle=random(0,2*PI);
-  params.margin=random(0,100);
+  params.angle=randomFloat(0,2*PI);
+  params.margin=randomFloat(0,100);
 
-  params.type=Math.floor(random(0,4)) | 0; // | 0 converts to an int32
-  params.type=4;
+  params.type=randomInt(0,4);
 
   switch (params.type) {
+    case Graph.TYPE_POLAR:
+      params.type=Graph.TYPE_POLAR;
+      params.nb_orbits=randomInt(2,11);
+      params.nb_nodes_per_orbit=randomInt(4,13);
+      graph=new Graph(Graph.TYPE_POLAR,
+                         params.margin,
+                         params.margin,
+                         WIDTH-2*params.margin,
+                         HEIGHT-2*params.margin,
+                         params.nb_nodes_per_orbit,
+                         params.nb_orbits);
+      break;
     case Graph.TYPE_TGRID:
       params.type=Graph.TYPE_TGRID;
-      params.shape1=-random(0.3, 1.2);
-      params.shape2=-random(0.3, 1.2);
-      params.edge_size=random(50,90);
+      params.shape1=-randomFloat(0.3, 1.2);
+      params.shape2=-randomFloat(0.3, 1.2);
+      params.edge_size=randomFloat(50,90);
       graph=new Graph(params.type,
                          params.margin,
                          params.margin,
@@ -744,10 +805,10 @@ function State()
       break;
     case Graph.TYPE_KENNICOTT:
       params.type=Graph.TYPE_KENNICOTT;
-      params.shape1=random(-1,1);
-      params.shape2=random(-1,1);
-      params.edge_size=random(70,90);
-      params.cluster_size=params.edge_size/random(3,12)-1;
+      params.shape1=randomFloat(-1,1);
+      params.shape2=randomFloat(-1,1);
+      params.edge_size=randomFloat(70,90);
+      params.cluster_size=params.edge_size/randomFloat(3,12)-1;
       graph=new Graph(params.type,
                          params.margin,
                          params.margin,
@@ -758,8 +819,8 @@ function State()
       break;
     case Graph.TYPE_TRIANGLE:
       params.type=Graph.TYPE_TRIANGLE;
-      params.edge_size=random(60,100);
-      params.margin=random(-900,0);
+      params.edge_size=randomFloat(60,100);
+      params.margin=randomFloat(-900,0);
       graph=new Graph (Graph.TYPE_TRIANGLE,
                           params.margin,
                           params.margin,
@@ -768,22 +829,10 @@ function State()
                           params.edge_size,
                           0);
       break;
-    case Graph.TYPE_POLAR:
-      params.type=Graph.TYPE_POLAR;
-      params.nb_orbits=random(2,11);
-      params.nb_nodes_per_orbit=random(4,13);
-      graph=new Graph(Graph.TYPE_POLAR,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.nb_nodes_per_orbit,
-                         params.nb_orbits);
-      break;
     case Graph.TYPE_CUSTOM:
       params.type=Graph.TYPE_CUSTOM;
-      params.nb_orbits=random(2,11);
-      params.nb_nodes_per_orbit=random(4,13);
+      params.nb_orbits=randomInt(2,11);
+      params.nb_nodes_per_orbit=randomInt(4,13);
       graph=new Graph(Graph.TYPE_CUSTOM,
                          params.margin,
                          params.margin,
@@ -796,19 +845,19 @@ function State()
     }
 
 //  graph.rotate(st.params.angle,WIDTH/2,HEIGHT/2);
-  print("Graph: "+graph);
+//  print("Graph: "+graph);
 
   pattern=new Pattern(st, graph, params.shape1, params.shape2);
   pattern.make_curves();
   t = 0.0;
 
-  var canvasBackground="rgb("+random(0,100)+","+random(0,100)+","+random(0,100)+")";
-  document.getElementById("canvas").style.backgroundColor=canvasBackground;
+  var canvasBackground="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
+  document.getElementById("canvas").style.backgroundColor = canvasBackground;
 
   //  if (pattern.splines.length==1) {
     colorMode(HSB);
-    start=color(random(0,256), 200, 200);
-    end=color(random(0,256), 200, 200);
+    start=color(randomInt(0,256), 200, 200);
+    end=color(randomInt(0,256), 200, 200);
     //  }
   strokeWeight(params.curve_width);
   //  stroke(0,0,0);
@@ -840,7 +889,7 @@ var start, end; // colors
 
 function setup()
 {
-  st.getGraph().draw();
+//  st.getGraph().draw();
 }
 
 function draw() {
@@ -870,7 +919,7 @@ function draw() {
         //      else
         //        stroke(s.r, s.g, s.b);
         var p1=pi1.getPoint(), p2=pi2.getPoint();
-print(p1);
+
         line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
       //      speed = sqrt((pi2.p.getX()-pi1.p.getX())*(pi2.p.getX()-pi1.p.getX())+(pi2.p.getY()-pi1.p.getY())*(pi2.p.getY()-pi1.p.getY()));
       //      ellipse((pi2.p.getX()+pi1.p.getX())/2, (pi2.p.getY()+pi1.p.getY())/2, speed, speed);
