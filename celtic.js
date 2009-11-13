@@ -1,9 +1,46 @@
 (function() {
 
+
+function Params()
+{
+  var step=0.01; // parameter increment for progressive rendering
+  var delay;        /* controls curve drawing speed (step delay in microsecs) */
+  
+  //@@ Move values below outside of user-settable parameters
+  var curve_width, shadow_width; //float
+  var shape1, shape2; //float
+  var margin; //float
+  var type; // int. one of Graph.TYPE_*
+  var edge_size;
+  var cluster_size; /* only used if type is kennicott */
+  var nsteps; /* only if triangle: number of subdivisions along the side */
+  var nb_orbits;          /* only used if type is polar */
+  var nb_nodes_per_orbit; /* only used if type is polar */
+  var angle; /* angle of rotation of the graph around the centre */
+
+  this.getShape1 = function() { return shape1; };
+  this.getShape2 = function() { return shape2; };
+  this.getStep = function() { return step; };
+  this.getDelay = function() { return delay; };
+  this.getAngle = function() { return angle; };
+  this.setAngle = function(newAngle) { angle=newAngle; };
+};
+
+//================================================================================
+
+
 var g_canvas = document.getElementById("canvas");
 var g_ctx;
-if (g_canvas) 
+if (g_canvas) {
   g_ctx = g_canvas.getContext("2d");
+  g_ctx.lineJoin="round";
+  g_ctx.lineCap="round";
+
+  g_ctx.shadowColor="rgba(0,0,0,.5)";
+  g_ctx.shadowOffsetX=5;
+  g_ctx.shadowOffsetY=5;
+  g_ctx.shadowBlur=3;
+}
 else
   return;
 
@@ -57,6 +94,7 @@ function strokeWeight(weight)
 // <http://processing.org/reference/line_.html>
 function line(x1,y1, x2,y2)
 {
+//  g_ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
 //  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
   g_ctx.beginPath();
   g_ctx.moveTo(x1,y1);
@@ -411,8 +449,8 @@ Graph.prototype.rotate = function(angle, cx, cy)
   for (var i=0;i<this.nodes.length;i++) {
     n=this.nodes[i];
     x=n.getX(); y=n.getY();
-    n.getX() = (x-cx)*c-(y-cy)*s + cx;
-    n.getY() = (x-cx)*s+(y-cy)*c + cy;
+    n.setX((x-cx)*c-(y-cy)*s + cx);
+    n.setY((x-cx)*s+(y-cy)*c + cy);
   }
 };
 
@@ -458,26 +496,6 @@ function Node(new_x, new_y)
 
 //================================================================================
 
-function Params()
-{
-  var curve_width, shadow_width; //float
-  var shape1, shape2; //float
-  var margin; //float
-  var type; // int. one of Graph.TYPE_*
-  var edge_size;
-  var cluster_size; /* only used if type is kennicott */
-  var delay;        /* controls curve drawing speed (step delay in microsecs) */
-  var nsteps; /* only if triangle: number of subdivisions along the side */
-  var nb_orbits;          /* only used if type is polar */
-  var nb_nodes_per_orbit; /* only used if type is polar */
-  var angle; /* angle of rotation of the graph around the centre */
-
-  this.getShape1 = function() { return shape1; };
-  this.getShape2 = function() { return shape2; };
-
-};
-
-//================================================================================
 
 // A Pattern is a set of closed curves that form a motif
 function Pattern(new_st, new_g, new_shape1, new_shape2) {
@@ -658,16 +676,19 @@ function PointIndex(new_x,new_y,new_i) {
 
 function Spline(new_red,new_green,new_blue) {
   var segments = [];
-  var red=new_red;
-  var green=new_green;
-  var blue=new_blue;
+  var _red=new_red;
+  var _green=new_green;
+  var _blue=new_blue;
 
-  var cssColorString="rgb("+red+","+green+","+blue+")";
-  print("new Spline: "+cssColorString)
-  g_ctx.strokeStyle=cssColorString;
+//    var cssColorString="rgb("+red+","+green+","+blue+")";
+//    print("new Spline: "+cssColorString)
+//    g_ctx.strokeStyle=cssColorString;
 
   // accessors
   this.getSegments = function() { return segments; };
+  this.getRed = function() { return _red; };
+  this.getGreen = function() { return _green; };
+  this.getBlue = function() { return _blue; };
 
   this.add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
   {
@@ -695,7 +716,6 @@ function Spline(new_red,new_green,new_blue) {
   };
 
   this.draw = function() {
-    //    print("=== spline ===");
     for (var i=0;i<segments.length;i++) {
       var s=segments[i];
       s.draw();
@@ -748,7 +768,6 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 
 function State()
 {
-  var step=0.01;
   var showGraph; //Boolean
   var pattern;
   var graph;
@@ -756,11 +775,15 @@ function State()
   var delay2;
   var reset;
   var t;
+  var graphRotationAngle = randomFloat(0,2*PI);
+
   var params = new Params();
 
   this.getStep = function() { return step; };
   this.getPattern = function() { return pattern; };
   this.getGraph = function() { return graph; };
+  this.getParams = function() { return params; };
+  this.getGraphRotationAngle = function() { return graphRotationAngle; };
 
   // Constructor
   params.curve_width=randomFloat(4,10);
@@ -770,9 +793,7 @@ function State()
   params.shape1=.5;
   params.shape2=.5;
   params.edge_size=randomFloat(20,60);
-  //  params.delay=100;
   params.delay=0;
-  params.angle=randomFloat(0,2*PI);
   params.margin=randomFloat(0,100);
 
   params.type=randomInt(0,4);
@@ -844,15 +865,13 @@ function State()
     default: print("error: graph type out of bounds: "+params.type);
     }
 
-//  graph.rotate(st.params.angle,WIDTH/2,HEIGHT/2);
+  graph.rotate(graphRotationAngle,WIDTH/2,HEIGHT/2);
 //  print("Graph: "+graph);
 
-  pattern=new Pattern(st, graph, params.shape1, params.shape2);
+  pattern=new Pattern(this, graph, params.shape1, params.shape2);
   pattern.make_curves();
   t = 0.0;
 
-  var canvasBackground="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
-  document.getElementById("canvas").style.backgroundColor = canvasBackground;
 
   //  if (pattern.splines.length==1) {
     colorMode(HSB);
@@ -861,7 +880,7 @@ function State()
     //  }
   strokeWeight(params.curve_width);
   //  stroke(0,0,0);
-  //  graph.draw();
+  //graph.draw();
   //  print(graph);
 
 };
@@ -889,52 +908,57 @@ var start, end; // colors
 
 function setup()
 {
+  g_ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
+  g_ctx.fillRect(0,0,WIDTH,WIDTH);
 //  st.getGraph().draw();
 }
 
 function draw() {
-  var speed;
   var c; //color
+  var step = st.getParams().getStep();
+  var delay = st.getParams().getDelay();
+  var splines = st.getPattern().getSplines();
+  var t=0;
+  var t2;
+  var intervalId;
+  intervalId = setInterval(drawOneStep,delay);
 
-  for (t=0;t<=1.0;t+=st.getStep()) {
-    t2 = (t+st.getStep()>1.0) ? 1.0 : t+st.getStep();
+  function drawOneStep() {
+    if(t>1.0) clearInterval(intervalId);
+    else {
+      t2 = (t+step>1.0) ? 1.0 : t+step;
 
-    //  print("t: "+t+", t2: "+t2);
-    for (var i=0;i<st.getPattern().getSplines().length;i++) {
+      for (var i=0;i<splines.length;i++) {
+        s=splines[i];
 
-      s=st.getPattern().getSplines()[i];
-      //    s.draw();
-
-      if (s != null) { // skip if one-point spline 
-        pi1=s.value_at(t);
-        pi2=s.value_at(t2);
-        //      stroke(s.r, s.g, s.b);
-        //      line(pi1.p.getX(),pi1.p.getY(), pi2.p.getX(),pi2.p.getY());
-        
-        //      if (st.pattern.splines.length==1) // if only one curve to draw, make it more colourful
-        //        fill(lerpColor(start, end, t));
-        
-        //       stroke(lerpColor(start, end, t));
-        g_ctx.fillStyle="grey";
-        //      else
-        //        stroke(s.r, s.g, s.b);
-        var p1=pi1.getPoint(), p2=pi2.getPoint();
-
-        line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
-      //      speed = sqrt((pi2.p.getX()-pi1.p.getX())*(pi2.p.getX()-pi1.p.getX())+(pi2.p.getY()-pi1.p.getY())*(pi2.p.getY()-pi1.p.getY()));
-      //      ellipse((pi2.p.getX()+pi1.p.getX())/2, (pi2.p.getY()+pi1.p.getY())/2, speed, speed);
+        if (s != null) { // skip if one-point spline 
+          g_ctx.strokeStyle="rgb("+s.getRed()+","+s.getGreen()+","+s.getBlue()+")";
+          pi1=s.value_at(t);
+          pi2=s.value_at(t2);
+          var p1=pi1.getPoint(), p2=pi2.getPoint();
+          line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
+        }
       }
+      t=t2;
     }
   }
 }
 
 function print(text)
 {
-  // Firefox
-  console.log(text);
+  if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
+  else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
 }
 
-setup();
-draw();
+
+function main()
+{
+  setup();
+  draw();
+}
+
+g_canvas.addEventListener('click',main,false);
+main();
+
 
 })();
