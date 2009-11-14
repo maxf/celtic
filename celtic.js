@@ -900,7 +900,7 @@ function circle(cx,cy,radius)
 
 //===========================================================================
 
-var st=new State();
+var st;
 var t,t2; //float
 var s;
 var pi1, pi2, pi3, pi4;
@@ -908,6 +908,7 @@ var start, end; // colors
 
 function setup()
 {
+  st=new State();
   g_ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
   g_ctx.fillRect(0,0,WIDTH,WIDTH);
 //  st.getGraph().draw();
