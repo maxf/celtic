@@ -5,7 +5,7 @@ function Params()
 {
   var step=0.01; // parameter increment for progressive rendering
   var delay;        /* controls curve drawing speed (step delay in microsecs) */
-  
+
   //@@ Move values below outside of user-settable parameters
   var curve_width, shadow_width; //float
   var shape1, shape2; //float
@@ -220,7 +220,7 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
     //    print("Adding: "+e+"\n");
   };
 
-  this.add_node = function(node) 
+  this.add_node = function(node)
   {
     this.nodes.push(node);
     //    print("Adding: "+n+"\n");
@@ -797,6 +797,7 @@ function State()
   params.margin=randomFloat(0,100);
 
   params.type=randomInt(0,4);
+  //  params.type=4;
 
   switch (params.type) {
     case Graph.TYPE_POLAR:
@@ -901,8 +902,8 @@ function circle(cx,cy,radius)
 //===========================================================================
 
 var st;
-var t,t2; //float
 var s;
+var t,t2;
 var pi1, pi2, pi3, pi4;
 var start, end; // colors
 
@@ -919,20 +920,19 @@ function draw() {
   var step = st.getParams().getStep();
   var delay = st.getParams().getDelay();
   var splines = st.getPattern().getSplines();
-  var t=0;
-  var t2;
   var intervalId;
+
+  t=0;
   intervalId = setInterval(drawOneStep,delay);
 
   function drawOneStep() {
-    if(t>1.0) clearInterval(intervalId);
+    if(t>=1.0) {clearInterval(intervalId);}
     else {
       t2 = (t+step>1.0) ? 1.0 : t+step;
-
       for (var i=0;i<splines.length;i++) {
         s=splines[i];
 
-        if (s != null) { // skip if one-point spline 
+        if (s != null) { // skip if one-point spline
           g_ctx.strokeStyle="rgb("+s.getRed()+","+s.getGreen()+","+s.getBlue()+")";
           pi1=s.value_at(t);
           pi2=s.value_at(t2);
