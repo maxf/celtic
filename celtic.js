@@ -465,36 +465,6 @@ Graph.TYPE_CUSTOM=4;
 
 //====================================================================================
 
-function Node(new_x, new_y)
-{
-  var x=new_x;
-  var y=new_y;
-  var edges = [];
-
-  this.getX = function() { return x; };
-  this.getY = function() { return y; };
-  this.getEdges = function() { return edges; };
-  this.setX = function(new_x) { x=new_x; };
-  this.setY = function(new_y) { y=new_y; };
-  this.setEdges = function(new_edges) { edges=new_edges; };
-
-  this.draw = function()
-  {
-    circle(x, y, 4.0);
-  };
-
-  this.toString = function()
-  {
-    return "Node: {x:"+x+", y:"+y+"}";
-  };
-
-  this.add_edge = function(e)
-  {
-    edges.push(e);
-  };
-}
-
-//================================================================================
 
 
 // A Pattern is a set of closed curves that form a motif
