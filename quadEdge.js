@@ -21,13 +21,13 @@ function Edge() {
   var _data; // the edge's origin (Node)
   var _next; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
   var _num=0; // number of this edge in the QuadEdge that contains it
-  var _quad; // the quad-edge that this edge is a member of
+  var _quad; // the QuadEdge that this edge is the base edge of
 
   /*
    * returns (as an Edge) the dual of the current edge, directed from its left to its right
    */
   this.rot = function() { return this._quad._edges[(this._num+1)%4]; };
-
+  
   /*
    * returns (as an Edge) the dual of the current edge, directed from its right to its left
    */
@@ -83,7 +83,7 @@ function Edge() {
    */
   this.org = function()
   {
-
+    return this._data;
   };
 
   /*
@@ -91,22 +91,27 @@ function Edge() {
    */
   this.dest = function()
   {
-
+    return this.sym().org();
   };
 
   /*
-   * n1 and n2 are Nodes
+   * Sets this edge's origin and destination
+   * origin and destination are Nodes
    */
-  this.endPoints = function(n1,n2)
+  this.endPoints = function(origin,destination)
   {
-
+    this._data = origin;
+    this.sym()._data = destination;
   };
 
+  /*
+   * returns the QuadEdge that this edge is the base edge of
+   */
 
   this.qEdge = function()
   {
-
-  }
+    return this._quad;
+  };
 };
 
 /*################################################################################*/
