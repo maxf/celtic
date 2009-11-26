@@ -6,8 +6,7 @@ function Params()
   var step=0.01; // parameter increment for progressive rendering
   var delay;        /* controls curve drawing speed (step delay in microsecs) */
 
-  //@@ Move values below outside of user-settable parameters
-  var curve_width, shadow_width; //float
+  var curve_width; //float
   var shape1, shape2; //float
   var margin; //float
   var type; // int. one of Graph.TYPE_*
@@ -17,6 +16,7 @@ function Params()
   var nb_orbits;          /* only used if type is polar */
   var nb_nodes_per_orbit; /* only used if type is polar */
   var angle; /* angle of rotation of the graph around the centre */
+  var shadow_offset;
 
   this.getShape1 = function() { return shape1; };
   this.getShape2 = function() { return shape2; };
@@ -24,6 +24,8 @@ function Params()
   this.getDelay = function() { return delay; };
   this.getAngle = function() { return angle; };
   this.setAngle = function(newAngle) { angle=newAngle; };
+  this.getShadowOffset = function() { return getShadowOffset; };
+  this.setShadowOffset = function(newOffset) { shadow_offset=newOffset; };
 };
 
 //================================================================================
@@ -36,6 +38,7 @@ if (g_canvas) {
   g_ctx.lineJoin="round";
   g_ctx.lineCap="round";
 
+  // @@TODO: connect to Parameters
   g_ctx.shadowColor="rgba(0,0,0,.5)";
   g_ctx.shadowOffsetX=5;
   g_ctx.shadowOffsetY=5;
@@ -393,9 +396,9 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
       }
     break;
     case Graph.TYPE_CUSTOM:
-    var node1=new Node(50,50); this.add_node(node1);
-    var node2=new Node(50,100); this.add_node(node2);
-    var node3=new Node(100,100); this.add_node(node3);
+    var node1=new Node(250,250); this.add_node(node1);
+    var node2=new Node(250,300); this.add_node(node2);
+    var node3=new Node(300,300); this.add_node(node3);
 
     this.add_edge(new Edge(node1,node2));
     this.add_edge(new Edge(node2,node3));
@@ -787,7 +790,7 @@ function State()
 
   // Constructor
   params.curve_width=randomFloat(4,10);
-  params.shadow_width=params.curve_width+4;
+
   //  params.shape1=randomFloat(.5,2);
   //  params.shape2=randomFloat(.5,2);
   params.shape1=.5;
@@ -796,8 +799,8 @@ function State()
   params.delay=0;
   params.margin=randomFloat(0,100);
 
-  params.type=randomInt(0,4);
-  //  params.type=4;
+//  params.type=randomInt(0,4);
+  params.type=Graph.TYPE_CUSTOM;
 
   switch (params.type) {
     case Graph.TYPE_POLAR:
@@ -866,7 +869,7 @@ function State()
     default: print("error: graph type out of bounds: "+params.type);
     }
 
-  graph.rotate(graphRotationAngle,WIDTH/2,HEIGHT/2);
+//  graph.rotate(graphRotationAngle,WIDTH/2,HEIGHT/2);
 //  print("Graph: "+graph);
 
   pattern=new Pattern(this, graph, params.shape1, params.shape2);
@@ -910,9 +913,9 @@ var start, end; // colors
 function setup()
 {
   st=new State();
-  g_ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
-  g_ctx.fillRect(0,0,WIDTH,WIDTH);
-//  st.getGraph().draw();
+//  g_ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
+//  g_ctx.fillRect(0,0,WIDTH,WIDTH);
+  st.getGraph().draw();
 }
 
 function draw() {
