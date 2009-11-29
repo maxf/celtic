@@ -3,13 +3,13 @@ function Node(new_x, new_y)
   var _x=new_x;
   var _y=new_y;
 
-  this.x = function() { return x; };
-  this.y = function() { return y; };
-  this.setX = function(new_x) { x=new_x; };
-  this.setY = function(new_y) { y=new_y; };
+  this.x = function() { return this._x; };
+  this.y = function() { return this._y; };
+  this.setX = function(new_x) { this._x=new_x; };
+  this.setY = function(new_y) { this._y=new_y; };
 
-  this.draw = function() { circle(this.x, this.y, 4.0); };
-  this.toString = function() { return "Node: {x:"+this.x+", y:"+this.y+"}"; };
+  this.draw = function() { circle(this._x, this._y, 4.0); };
+  this.toString = function() { return "Node: {x:"+this._x+", y:"+this._y+"}"; };
 }
 
 //================================================================================
@@ -156,13 +156,65 @@ function Subdivision(a,b,c) {
 
   var _startingEdge; // an Edge
 
-  function _locate(n) {
-    // n is a Node
-    ;
-  }
+  /*
+   * Returns an edge e, s.t. either x is on e, or e is an edge of
+   * a triangle containing x. The search starts from startingEdge
+   * and proceeds in the general direction of x. Based on the
+   * pseudocode in Guibas and Stolfi (1985) p.121.
+   * x : Node
+   */
+  this._locate = function(x) {
+    var e = this.startingEdge; //Edge
+    while (true) {
+      if (x==e.org() || x==e.dest()) return e;
+      else if (rightOf(x,e)) e=e.sym();
+      else if (!rightOf(x,e.oNext())) e=e.oNext();
+      else if (!rightOf(x,e.dPrev())) e=e.dPrev();
+      else return e;
+    }
+  };
 
-  this.insertSite = function(n) {
-    // n is a Node
+  // Inserts a new point into a subdivision representing a Delaunay
+  // triangulation, and fixes the affected edges so that the result
+  // is still a Delaunay triangulation. This is based on the
+  // pseudocode from Guibas and Stolfi (1985) p.120, with slight
+  // modifications and a bug fix.
+  // x: Node
+  this.insertSite = function(x) {
+    var e = this._locate(x); // Edge
+    if ((x==e.org())||(x==e.dest())) // point is already in
+      return;
+    else if (onEdge(x,e)) {
+      e=e.oPrev();
+      deleteEdge(e.oNext);
+    }
+
+    // Connect the new point to the vertices of the containing
+    // triangle (or quadrilateral, if the new point fell on an
+    // existing edge.)
+
+    var base = makeEdge(); //Edge
+    base.endPoints(e.org(), new Node(x.x(),x.y()));
+    splice(base,e);
+    this.startingEdge = base;
+    do {
+      base = connect(e,base.sym());
+      e = base.oPrev();
+    } while (e.lNext() != this.startingEdge);
+
+    // Examine syspect edges to ensure that the Delaunay triangulation
+    // is satisfied
+    do {
+      var t = e.oPrev(); //Edge
+      if (rightOf(t.dest(),e) && inCircle(e.org(),t.dest(),e.dest(),x)) {
+        swap(e);
+        e=e.oPrev();
+      }
+      else if (e.oNext==this.startingEdge) // no more suspect edges
+        return;
+      else // pop a suspect edge
+        e=e.oNext().lPrev();
+    } while(true);
   };
 
   this.draw = function() {
@@ -179,9 +231,7 @@ function Subdivision(a,b,c) {
   var ec = makeEdge(); splice(eb.sym(),ec); ec.endPoints(dc,da); splice(ec.sym(),ea);
   this.startingEdge = ea;
 
-
 }
-
 /*################################################################################*/
 
 /*
@@ -331,6 +381,17 @@ function onEdge(x,e)
 
   if (t1>t3 || t2>t3) return false;
 
-  var line = new Line(e.org(), e.dest()); // @@ need Line class
-  return Math.abs(line.eval(x)) < EPS;
+ // var line = new Line(e.org(), e.dest()); // @@ need Line class
+//  return Math.abs(line.eval(x)) < EPS;
+  var x1 = e.org().x(), y1=e.org().y();
+  var x2 = e.dest().x(), y2=e.dest().y();
+  var a,b,dist;
+  if (x2-x1==0) { // line is vertical
+    dist = x.x()-x2;
+  } else {
+    a=(y2-y1)/(x2-x1), b=y1-a*x1;
+    dist = a*x.x()+b*x.y();
+  }
+  return dist < EPS;
 }
+
