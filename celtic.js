@@ -30,7 +30,7 @@ function Params()
 
 //================================================================================
 
-
+/*
 var g_canvas = document.getElementById("canvas");
 var g_ctx;
 if (g_canvas) {
@@ -46,7 +46,7 @@ if (g_canvas) {
 }
 else
   return;
-
+*/
 const WIDTH=document.getElementById("canvas").width;
 const HEIGHT=document.getElementById("canvas").height;
 const CLOCKWISE=0;
@@ -931,8 +931,9 @@ function main()
   draw();
 }
 
+   /*
 g_canvas.addEventListener('click',main,false);
 main();
-
+*/
 
 })();
