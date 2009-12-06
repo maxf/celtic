@@ -1,177 +1,143 @@
-var g_canvas = document.getElementById("canvas");
-var g_ctx;
-if (g_canvas) {
-  g_ctx = g_canvas.getContext("2d");
-  g_ctx.strokeStyle = "rgb(100,100,100)";
+var drawnEdges=[]; // Array of Edge
 
-  var node1 = new Node(100,100);
-  var node2 = new Node(200,100);
-  var node3 = new Node(200,200);
+Math.TWO_PI = 6.2932;
 
-  var s = new Subdivision(node1,node2,node3);
-
-}
-
-function circle(cx,cy,radius)
-{
-  g_ctx.lineWidth = 2;
-  g_ctx.beginPath();
-  g_ctx.arc(cx,cy,radius,0,TWO_PI,false);
-  g_ctx.closePath();
-  g_ctx.stroke();
-}
-
-
-function line(x1,y1, x2,y2)
-{
-//  g_ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
-//  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
-  g_ctx.beginPath();
-  g_ctx.moveTo(x1,y1);
-  g_ctx.lineTo(x2,y2);
-  g_ctx.closePath();
-  g_ctx.stroke();
-}
-
-//################################################################################
-
-function Node(new_x, new_y)
+var Node = function(new_x, new_y)
 {
   // constructor
   this._x=new_x;
   this._y=new_y;
+};
 
-  // functions
-  this.x = function() { return this._x; };
-  this.y = function() { return this._y; };
-  this.setX = function(new_x) { this._x=new_x; };
-  this.setY = function(new_y) { this._y=new_y; };
-  this.draw = function() { circle(this._x, this._y, 4.0); };
-  this.toString = function() { return "Node: {x:"+this._x+", y:"+this._y+"}"; };
-}
+Node.prototype = {
+  x: function() { return this._x; },
+  y: function() { return this._y; },
+  setX: function(new_x) { this._x=new_x; },
+  setY: function(new_y) { this._y=new_y; },
+  draw: function() { circle(this._x, this._y, 4.0); },
+  toString: function() { return "Node: {x:"+this._x+", y:"+this._y+"}"; }
+};
 
 //================================================================================
 
-var drawnEdges=[]; // Array of Edge
-function alreadyDrawn(edge)
-{
-  for (var i=0; i<drawnEdges.length; i++)
-    if (edge===drawnEdges[i]) return true;
-  return false;
-}
 
+
+//================================================================================
 /*
- * Directed edge
+ * Edge: Directed edge class
  */
+
 function Edge() {
 //  this._data; // the edge's origin (Node)
 //  this._next; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
   this._num=0; // number of this edge in the QuadEdge that contains it
 //  this._quad; // the QuadEdge that this edge is the base edge of
+};
 
+Edge.prototype = {
   /*
    * returns (as an Edge) the dual of the current edge, directed from its right to its left
    */
-  this.rot = function() { return this._quad._edges[(this._num+1)%4]; };
+  rot: function() { return this._quad._edges[(this._num+1)%4]; },
 
   /*
    * returns (as an Edge) the dual of the current edge, directed from its left to its right
    */
-  this.invRot = function() { return this._quad._edges[(this._num+1)%4]; };
+  invRot: function() { return this._quad._edges[(this._num+1)%4]; },
 
   /*
    * returns (as an Edge) the edge from the destination to the origin of this edge
    */
-  this.sym = function() { return this._quad._edges[(this._num+2)%4]; };
+  sym: function() { return this._quad._edges[(this._num+2)%4]; },
 
   /*
    * returns (as an Edge) the next ccw edge around (from) the origin of the current edge
    */
-  this.oNext = function() { return this._next; };
+  oNext: function() { return this._next; },
 
   /*
    * returns (as an Edge) the next cw edge around (from) the origin of the current edge
    */
-  this.oPrev = function() { return this.rot().oNext().rot(); };
+  oPrev: function() { return this.rot().oNext().rot(); },
 
   /*
    * returns (as an Edge) the next ccw edge around (into) the destination of the current edge
    */
-  this.dNext = function() { return this.sym().oNext().sym(); };
+  dNext: function() { return this.sym().oNext().sym(); },
 
   /*
    * returns (as an Edge) the next cw edge around (into) the destination of the current edge
    */
-  this.dPrev = function() { return this.invRot().oNext().invRot(); };
+  dPrev: function() { return this.invRot().oNext().invRot(); },
 
   /*
    * returns (as an Edge) the ccw edge around the left face following the current edge
    */
-  this.lNext = function() { return this.invRot().oNext().rot(); };
+  lNext: function() { return this.invRot().oNext().rot(); },
 
   /*
    * returns (as an Edge) the ccw edge around the left face before the current edge
    */
-  this.lPrev = function() { return this.oNext().sym(); };
+  lPrev: function() { return this.oNext().sym(); },
 
   /*
    * returns (as an Edge) the edge around the right face ccw following the current edge
    */
-  this.rNext = function() { return this.rot().oNext().invRot(); };
+  rNext: function() { return this.rot().oNext().invRot(); },
 
   /*
    * returns (as an Edge) the edge around the right face ccw before the current edge
    */
-  this.rPrev = function() { return this.sym().oNext(); };
+  rPrev: function() { return this.sym().oNext(); },
 
   /*
    * returns the origin node (as Node) of this edge
    */
-  this.org = function()
+  org: function()
   {
     return this._data;
-  };
+  },
 
   /*
    * returns the destination node (as Node) of this edge
    */
-  this.dest = function()
+  dest: function()
   {
     return this.sym().org();
-  };
+  },
 
   /*
    * Sets this edge's origin and destination
    * origin and destination are Nodes
    */
-  this.endPoints = function(origin,destination)
+  endPoints: function(origin,destination)
   {
     this._data = origin;
     this.sym()._data = destination;
-  };
+  },
 
   /*
    * returns the QuadEdge that this edge is the base edge of
    */
 
-  this.qEdge = function()
+  qEdge: function()
   {
     return this._quad;
-  };
+  },
 
 
-  this.draw = function()
+  draw: function()
   {
-    if (alreadyDrawn(this)) {
+    if (!alreadyDrawn(this)) {
       line(this.org().x(),this.org().y(),this.dest().x(),this.dest().y());
       this.org().draw();
-      drawnEdges.add(this);
+      drawnEdges.push(this);
       this.oNext().draw();
       this.dNext().draw();
       this.oPrev().draw();
       this.dPrev().draw();
     }
-  };
+  }
 
 };
 
@@ -185,7 +151,7 @@ function Edge() {
  * - the reversed dual edge
  */
 
-function QuadEdge() {
+var QuadEdge = function() {
   this._edges = new Array(4);
   // array of 4 Edges:
   // [0] the base edge of this QuadEdge
@@ -197,25 +163,43 @@ function QuadEdge() {
   for (var i=0;i<4;i++) {
     this._edges[i] = new Edge();
     this._edges[i].num=i;
+    this._edges[i]._quad = this;
   }
-
-  this._edges[0]._quad = this;
 
   this._edges[0]._next = this._edges[0];
   this._edges[1]._next = this._edges[3];
   this._edges[2]._next = this._edges[2];
   this._edges[3]._next = this._edges[1];
-
-}
+};
 
 
 /*################################################################################*/
 /*
  * a Subdivision of the plane into polygons
  */
-function Subdivision(a,b,c) {
+var Subdivision = function(a,b,c) {
 
-  var _startingEdge; // an Edge
+  //  _startingEdge; // an Edge
+
+  // constructor
+  // a,b,c are Nodes
+  var da = new Node(a.x(), a.y());
+  var db = new Node(b.x(), b.y());
+  var dc = new Node(c.x(), c.y());
+  var ea = makeEdge();
+  ea.endPoints(da,db);
+  var eb = makeEdge();
+  splice(ea.sym(),eb); //@@FIXME: ea.sym() doesn't have a _quad
+  eb.endPoints(db,dc);
+  var ec = makeEdge();
+  splice(eb.sym(),ec);
+  ec.endPoints(dc,da);
+  splice(ec.sym(),ea);
+  this.startingEdge = ea;
+
+};
+
+Subdivision.prototype = {
 
   /*
    * Returns an edge e, s.t. either x is on e, or e is an edge of
@@ -224,7 +208,7 @@ function Subdivision(a,b,c) {
    * pseudocode in Guibas and Stolfi (1985) p.121.
    * x : Node
    */
-  this._locate = function(x) {
+  _locate: function(x) {
     var e = this.startingEdge; //Edge
     while (true) {
       if (x==e.org() || x==e.dest()) return e;
@@ -233,7 +217,7 @@ function Subdivision(a,b,c) {
       else if (!rightOf(x,e.dPrev())) e=e.dPrev();
       else return e;
     }
-  };
+  },
 
   // Inserts a new point into a subdivision representing a Delaunay
   // triangulation, and fixes the affected edges so that the result
@@ -241,7 +225,7 @@ function Subdivision(a,b,c) {
   // pseudocode from Guibas and Stolfi (1985) p.120, with slight
   // modifications and a bug fix.
   // x: Node
-  this.insertSite = function(x) {
+  insertSite: function(x) {
     var e = this._locate(x); // Edge
     if ((x==e.org())||(x==e.dest())) // point is already in
       return;
@@ -276,32 +260,14 @@ function Subdivision(a,b,c) {
       else // pop a suspect edge
         e=e.oNext().lPrev();
     } while(true);
-  };
+  },
 
 
-  this.draw = function() {
-    this.drawnEdges=[]; // array of Edge
+  draw: function() {
     this.startingEdge.draw();
-    this.drawnEdges.push(this.startingEdge);
-  };
+  }
+};
 
-  // constructor
-  // a,b,c are Nodes
-  var da = new Node(a.x(), a.y());
-  var db = new Node(b.x(), b.y());
-  var dc = new Node(c.x(), c.y());
-  var ea = makeEdge();
-  ea.endPoints(da,db);
-  var eb = makeEdge();
-  splice(ea.sym(),eb); //@@FIXME: ea.sym() doesn't have a _quad
-  eb.endPoints(db,dc);
-  var ec = makeEdge();
-  splice(eb.sym(),ec);
-  ec.endPoints(dc,da);
-  splice(ec.sym(),ea);
-  this.startingEdge = ea;
-
-}
 /*################################################################################*/
 
 /*
@@ -463,5 +429,55 @@ function onEdge(x,e)
     dist = a*x.x()+b*x.y();
   }
   return dist < EPS;
+}
+
+
+
+var g_canvas = document.getElementById("canvas");
+var g_ctx;
+if (g_canvas) {
+  g_ctx = g_canvas.getContext("2d");
+  g_ctx.strokeStyle = "rgb(100,100,100)";
+
+  var node1 = new Node(100,100);
+  var node2 = new Node(200,100);
+  var node3 = new Node(200,200);
+
+  var s = new Subdivision(node1,node2,node3);
+
+  s.draw();
+
+}
+
+function circle(cx,cy,radius)
+{
+  g_ctx.lineWidth = 2;
+  g_ctx.beginPath();
+  g_ctx.arc(cx,cy,radius,0,Math.TWO_PI,false);
+  g_ctx.closePath();
+  g_ctx.stroke();
+}
+
+
+function line(x1,y1, x2,y2)
+{
+//  g_ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
+//  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
+  g_ctx.beginPath();
+  g_ctx.moveTo(x1,y1);
+  g_ctx.lineTo(x2,y2);
+  g_ctx.closePath();
+  g_ctx.stroke();
+}
+
+//################################################################################
+
+
+
+function alreadyDrawn(edge)
+{
+  for (var i=0; i<drawnEdges.length; i++)
+    if (edge===drawnEdges[i]) return true;
+  return false;
 }
 
