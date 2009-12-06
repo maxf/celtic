@@ -162,7 +162,7 @@ var QuadEdge = function() {
   // constructor
   for (var i=0;i<4;i++) {
     this._edges[i] = new Edge();
-    this._edges[i].num=i;
+    this._edges[i]._num=i;
     this._edges[i]._quad = this;
   }
 
@@ -444,6 +444,8 @@ if (g_canvas) {
   var node3 = new Node(200,200);
 
   var s = new Subdivision(node1,node2,node3);
+
+  s.insertSite(new Node(100,200));
 
   s.draw();
 
