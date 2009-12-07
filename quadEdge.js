@@ -179,7 +179,7 @@ var QuadEdge = function() {
  */
 var Subdivision = function(a,b,c) {
 
-  //  _startingEdge; // an Edge
+  //  startingEdge; // an Edge
 
   // constructor
   // a,b,c are Nodes
@@ -206,11 +206,10 @@ Subdivision.prototype = {
    * a triangle containing x. The search starts from startingEdge and
    * proceeds in the general direction of x. Based on the pseudocode
    * in Guibas and Stolfi (1985) p.121.
-   * 
+   *
    * x : Node
    */
   _locate: function(x) {
-    var s = this;
     var e = this.startingEdge; //Edge
     while (true) {
       if (x==e.org() || x==e.dest()) return e;
@@ -447,7 +446,7 @@ if (g_canvas) {
 
   var s = new Subdivision(node1,node2,node3);
 
-  s.insertSite(new Node(160,140));
+  s.insertSite(new Node(175,125));
 
   s.draw();
 
