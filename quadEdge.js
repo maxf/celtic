@@ -189,7 +189,7 @@ var Subdivision = function(a,b,c) {
   var ea = makeEdge();
   ea.endPoints(da,db);
   var eb = makeEdge();
-  splice(ea.sym(),eb); //@@FIXME: ea.sym() doesn't have a _quad
+  splice(ea.sym(),eb);
   eb.endPoints(db,dc);
   var ec = makeEdge();
   splice(eb.sym(),ec);
@@ -202,13 +202,15 @@ var Subdivision = function(a,b,c) {
 Subdivision.prototype = {
 
   /*
-   * Returns an edge e, s.t. either x is on e, or e is an edge of
-   * a triangle containing x. The search starts from startingEdge
-   * and proceeds in the general direction of x. Based on the
-   * pseudocode in Guibas and Stolfi (1985) p.121.
+   * Returns an edge e, such that either x is on e, or e is an edge of
+   * a triangle containing x. The search starts from startingEdge and
+   * proceeds in the general direction of x. Based on the pseudocode
+   * in Guibas and Stolfi (1985) p.121.
+   * 
    * x : Node
    */
   _locate: function(x) {
+    var s = this;
     var e = this.startingEdge; //Edge
     while (true) {
       if (x==e.org() || x==e.dest()) return e;
@@ -358,7 +360,7 @@ function triArea(a,b,c)
 function inCircle(a,b,c,d)
 {
   return (a.x()*a.x()+a.y()*a.y()) * triArea(b,c,d) -
-         (b.x()*b.x()+b.y()*b.y()) * triArea(a,c,d) -
+         (b.x()*b.x()+b.y()*b.y()) * triArea(a,c,d) +
          (c.x()*c.x()+c.y()*c.y()) * triArea(a,b,d) -
          (d.x()*d.x()+d.y()*d.y()) * triArea(a,b,c) > 0;
 }
@@ -412,7 +414,7 @@ function onEdge(x,e)
   if (t1<EPS || t2<EPS) return true;
 
 //  t3 = (e.org()-e.dest()).norm();
-  t3 = (e.dest.x()-e.org.x())*(e.dest.x()-e.org.x())+(e.dest.y()-e.org.y())*(e.dest.y()-e.org.y());
+  t3 = (e.dest().x()-e.org().x())*(e.dest().x()-e.org().x())+(e.dest().y()-e.org().y())*(e.dest().y()-e.org().y());
 
 
   if (t1>t3 || t2>t3) return false;
@@ -445,7 +447,7 @@ if (g_canvas) {
 
   var s = new Subdivision(node1,node2,node3);
 
-  s.insertSite(new Node(100,200));
+  s.insertSite(new Node(160,140));
 
   s.draw();
 
