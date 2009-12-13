@@ -43,7 +43,7 @@ Edge.prototype = {
   /*
    * returns (as an Edge) the dual of the current edge, directed from its left to its right
    */
-  invRot: function() { return this._quad._edges[(this._num+1)%4]; },
+  invRot: function() { return this._quad._edges[(this._num+3)%4]; },
 
   /*
    * returns (as an Edge) the edge from the destination to the origin of this edge
@@ -256,7 +256,7 @@ Subdivision.prototype = {
         swap(e);
         e=e.oPrev();
       }
-      else if (e.oNext==this.startingEdge) // no more suspect edges
+      else if (e.oNext()==this.startingEdge) // no more suspect edges
         return;
       else // pop a suspect edge
         e=e.oNext().lPrev();
