@@ -266,6 +266,7 @@ Edge.prototype = {
   {
     this.spliceWith(this.oPrev());
     this.sym().spliceWith(this.sym().oPrev());
+    delete this._quad;
   },
 
   /*
