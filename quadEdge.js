@@ -1,10 +1,11 @@
-var drawnEdges=[]; // Array of Edge
-
 Math.TWO_PI = 6.2932;
+
+
+//================================================================================
+// Node Class
 
 var Node = function(new_x, new_y)
 {
-  // constructor
   this._x=new_x;
   this._y=new_y;
 };
@@ -15,12 +16,105 @@ Node.prototype = {
   setX: function(new_x) { this._x=new_x; },
   setY: function(new_y) { this._y=new_y; },
   draw: function() { circle(this._x, this._y, 4.0); },
-  toString: function() { return "Node: {x:"+this._x+", y:"+this._y+"}"; }
+  toString: function() { return "Node: {x:"+this._x+", y:"+this._y+"}"; },
+
+  /*
+   * returns twice the area of the oriented triangle (this,b,c), i.e., the
+   * area is positive if the triangle is oriented couterclockwise
+   * b,c: Nodes
+   * returns: number
+   */
+  triArea: function(b,c) 
+  {
+    return (b.x()-this._x)*(c.y()-this._y)-(b.y()-this._y)*(c.x()-this._x);
+  },
+
+  /*
+   * returns true if this point is inside the circle defined by the points a,b,c
+   * See Guibas and Stolfi (1985) p.107.
+   * a,b,c: Nodes
+   * returns: Boolean
+   */
+  inCircle: function(a,b,c)
+  {
+    return (a.x()*a.x()+a.y()*a.y()) * b.triArea(c,this) -
+           (b.x()*b.x()+b.y()*b.y()) * a.triArea(c,this) +
+           (c.x()*c.x()+c.y()*c.y()) * a.triArea(b,this) -
+           (this._x*this._x+this._y*this._y) * a.triArea(b,c) > 0;
+  },
+
+  /*
+   * returns true if the points this,b,c are in a counterclockwise order
+   * b,c: Nodes
+   * returns: Boolean
+   */
+  ccw: function(b,c)
+  {
+    return this.triArea(b,c)>0;
+  },
+
+  /*
+   * returns true if this node is to the right of edge e
+   * e: Edge
+   * returns: Boolean
+   */
+  isRightOf: function(e)
+  {
+    return this.ccw(e.dest(),e.org());
+  },
+
+  /*
+   * returns true if this node is to the left of edge e
+   * e: Edge
+   * returns: Boolean
+   */
+  isLeftOf: function(e)
+  {
+    return this.ccw(e.org(),e.dest());
+  },
+
+  /*
+   * A predicate that determines if this point is on the edge e.
+   * The point is considered on if it is in the EPS-neighborhood
+   * of the edge.
+   * e: Edge
+   * returns: Boolean
+   */
+  isOnEdge: function(e)
+  {
+    var EPS=0.00000001;
+    var t1,t2,t3; // Numbers
+    
+    //  t1 = (x-e.org()).norm();
+    t1 = (this._x-e.org().x())*(this._x-e.org().x())+(this._y-e.org().y())*(this._y-e.org().y());
+    
+    //  t2 = (x-e.dest()).norm();
+    t2 = (this._x-e.dest().x())*(this._x-e.dest().x())+(this._y-e.dest().y())*(this._y-e.dest().y());
+    
+    if (t1<EPS || t2<EPS) return true;
+    
+    //  t3 = (e.org()-e.dest()).norm();
+    t3 = (e.dest().x()-e.org().x())*(e.dest().x()-e.org().x())+(e.dest().y()-e.org().y())*(e.dest().y()-e.org().y());
+    
+    
+    if (t1>t3 || t2>t3) return false;
+    
+    // var line = new Line(e.org(), e.dest()); // @@ need Line class
+    //  return Math.abs(line.eval(x)) < EPS;
+    var x1 = e.org().x(), y1=e.org().y();
+    var x2 = e.dest().x(), y2=e.dest().y();
+    var a,b,dist;
+    if (x2-x1==0) { // line is vertical
+      dist = this._x-x2;
+    } else {
+      a=(y2-y1)/(x2-x1), b=y1-a*x1;
+      dist = a*this._x+b*this._y;
+    }
+    return dist < EPS;
+  }
 };
 
-//================================================================================
-
-
+//== /Node =======================================================================
 
 //================================================================================
 /*
@@ -32,6 +126,7 @@ function Edge() {
 //  this._next; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
   this._num=0; // number of this edge in the QuadEdge that contains it
 //  this._quad; // the QuadEdge that this edge is the base edge of
+  this._drawn = false; // Boolean. True if this edge has already been drawn
 };
 
 Edge.prototype = {
@@ -119,19 +214,85 @@ Edge.prototype = {
   /*
    * returns the QuadEdge that this edge is the base edge of
    */
-
   qEdge: function()
   {
     return this._quad;
   },
 
 
+  /*
+   * Attach edges together or break them appart
+   * 
+   * b: the edge to attach or break (Edge)
+   */
+  spliceWith: function(b)
+  {
+    var alpha = this.oNext().rot(); // Edge
+    var beta = b.oNext().rot(); // Edge
+    var t1 = b.oNext(); // Edge
+    var t2 = this.oNext(); // Edge
+    var t3 = beta.oNext(); // Edge
+    var t4 = alpha.oNext(); // Edge
+    
+    this._next = t1;
+    b._next = t2;
+    alpha._next = t3;
+    beta._next = t4;
+  },
+
+
+  /*
+   * Add a new edge e connecting the destination of this edge to the
+   * origin of b in such a way that all 3 have the same left face
+   * after the connection is complete. Additionally the data pointers
+   * of the new edge are set.
+   * 
+   * parameters: b: Edge
+   * returns: Edge
+   */
+  connectTo: function(b)
+  {
+    var e=makeEdge();
+    e.spliceWith(this.lNext());
+    e.sym().spliceWith(b);
+    e.endPoints(this.dest(),b.org());
+    return e;
+  },
+
+  /*
+   * Remove from the subdivision
+   */
+  remove: function() // e is an edge
+  {
+    this.spliceWith(this.oPrev());
+    this.sym().spliceWith(this.sym().oPrev());
+  },
+
+  /*
+   * Essentially turns this edge counterclockwise inside its enclosing
+   * quadrilateral. The data pointers are modified accordingly.
+   */
+  swap: function()
+  {
+    var a = this.oPrev();
+    var b = this.sym().oPrev();
+    this.spliceWith(a);
+    this.sym().spliceWith(b);
+    this.spliceWith(a.lNext());
+    this.sym().spliceWith(b.lNext());
+    this.endPoints(a.dest(),b.dest());
+  },
+
+
+  /*
+   * draw this edge and the ones connected to it
+   */
   draw: function()
   {
-    if (!alreadyDrawn(this)) {
+    if (!this._drawn) {
       line(this.org().x(),this.org().y(),this.dest().x(),this.dest().y());
+      this._drawn = true;
       this.org().draw();
-      drawnEdges.push(this);
       this.oNext().draw();
       this.dNext().draw();
       this.oPrev().draw();
@@ -140,15 +301,11 @@ Edge.prototype = {
   }
 
 };
+//== /Edge =======================================================================
 
-/*################################################################################*/
-
-/*
- * A quad-edge: 4 directed edges corresponding to a single undirected edge
- * - that edge
- * - its reversed edge
- * - the dual edge
- * - the reversed dual edge
+//================================================================================
+/* 
+ * QuadEdge Class
  */
 
 var QuadEdge = function() {
@@ -159,7 +316,6 @@ var QuadEdge = function() {
   // [2] the reversed edge of this edge
   // [3] the dual of the base edge which goes from its left to its right
 
-  // constructor
   for (var i=0;i<4;i++) {
     this._edges[i] = new Edge();
     this._edges[i]._num=i;
@@ -172,31 +328,31 @@ var QuadEdge = function() {
   this._edges[3]._next = this._edges[1];
 };
 
+//== /QuadEdge ===================================================================
 
-/*################################################################################*/
+//================================================================================
 /*
- * a Subdivision of the plane into polygons
+ * Subdivision: a subdivision of the plane into polygons
  */
 var Subdivision = function(a,b,c) {
+  // a,b,c are the Nodes of the original triangle
 
-  //  startingEdge; // an Edge
+  // Attributes:
+  //  startingEdge: the first Edge of this subdivision, from a to b
 
-  // constructor
-  // a,b,c are Nodes
   var da = new Node(a.x(), a.y());
   var db = new Node(b.x(), b.y());
   var dc = new Node(c.x(), c.y());
   var ea = makeEdge();
   ea.endPoints(da,db);
   var eb = makeEdge();
-  splice(ea.sym(),eb);
+  ea.sym().spliceWith(eb);
   eb.endPoints(db,dc);
   var ec = makeEdge();
-  splice(eb.sym(),ec);
+  eb.sym().spliceWith(ec);
   ec.endPoints(dc,da);
-  splice(ec.sym(),ea);
+  ec.sym().spliceWith(ea);
   this.startingEdge = ea;
-
 };
 
 Subdivision.prototype = {
@@ -213,26 +369,30 @@ Subdivision.prototype = {
     var e = this.startingEdge; //Edge
     while (true) {
       if (x==e.org() || x==e.dest()) return e;
-      else if (rightOf(x,e)) e=e.sym();
-      else if (!rightOf(x,e.oNext())) e=e.oNext();
-      else if (!rightOf(x,e.dPrev())) e=e.dPrev();
+      else if (x.isRightOf(e)) e=e.sym();
+      else if (!x.isRightOf(e.oNext())) e=e.oNext();
+      else if (!x.isRightOf(e.dPrev())) e=e.dPrev();
       else return e;
     }
   },
 
-  // Inserts a new point into a subdivision representing a Delaunay
-  // triangulation, and fixes the affected edges so that the result
-  // is still a Delaunay triangulation. This is based on the
-  // pseudocode from Guibas and Stolfi (1985) p.120, with slight
-  // modifications and a bug fix.
-  // x: Node
+  /*
+   * Inserts a new point into a subdivision representing a Delaunay
+   * triangulation, and fixes the affected edges so that the result
+   * is still a Delaunay triangulation. This is based on the
+   * pseudocode from Guibas and Stolfi (1985) p.120, with slight
+   * modifications and a bug fix.
+   * 
+   * x: Node
+   */
   insertSite: function(x) {
     var e = this._locate(x); // Edge
-    if ((x==e.org())||(x==e.dest())) // point is already in
+    if ((x==e.org())||(x==e.dest())) 
+      // point is already in
       return;
-    else if (onEdge(x,e)) {
+    else if (x.isOnEdge(e)) {
       e=e.oPrev();
-      deleteEdge(e.oNext);
+      e.oNext().remove();
     }
 
     // Connect the new point to the vertices of the containing
@@ -241,10 +401,10 @@ Subdivision.prototype = {
 
     var base = makeEdge(); //Edge
     base.endPoints(e.org(), new Node(x.x(),x.y()));
-    splice(base,e);
+    base.spliceWith(e);
     this.startingEdge = base;
     do {
-      base = connect(e,base.sym());
+      base = e.connectTo(base.sym());
       e = base.oPrev();
     } while (e.lNext() != this.startingEdge);
 
@@ -252,8 +412,8 @@ Subdivision.prototype = {
     // is satisfied
     do {
       var t = e.oPrev(); //Edge
-      if (rightOf(t.dest(),e) && inCircle(e.org(),t.dest(),e.dest(),x)) {
-        swap(e);
+      if (t.dest().isRightOf(e) && x.inCircle(e.org(),t.dest(),e.dest())) {
+        e.swap();
         e=e.oPrev();
       }
       else if (e.oNext()==this.startingEdge) // no more suspect edges
@@ -280,157 +440,9 @@ function makeEdge()
   return q._edges[0]; // type Edge
 }
 
-/*
- * Attach edges together or break them appart
- */
-function splice(a,b) // a and b are Edges
-{
-  var alpha = a.oNext().rot(); // Edge
-  var beta = b.oNext().rot(); // Edge
-  var t1 = b.oNext(); // Edge
-  var t2 = a.oNext(); // Edge
-  var t3 = beta.oNext(); // Edge
-  var t4 = alpha.oNext(); // Edge
-
-  a._next = t1;
-  b._next = t2;
-  alpha._next = t3;
-  beta._next = t4;
-}
-
-function deleteEdge(e) // e is an edge
-{
-  splice(e,e.oPrev());
-  splice(e.sym(), e.sym().oPrev());
-}
 
 
-/*
- * Add a new edge e connection the destination of a to the origin of b
- * in such a way that all 3 have the same left face after the connection
- * is complete. Additionally the data pointers of the new edge are set.
- * parameters: a, b: Edge
- * returns: Edge
- */
-function connect(a,b)
-{
-  var e=makeEdge();
-  splice(e,a.lNext());
-  splice(e.sym(),b);
-  e.endPoints(a.dest(),b.org());
-  return e;
-};
 
-/*
- * Essentially turns edge e counterclockwise inside its enclosing
- * quadrilateral. The data pointers are modified accordingly.
- * params: e: Edge
- */
-function swap(e)
-{
-  var a = e.oPrev();
-  var b = e.sym().oPrev();
-  splice(e,a);
-  splice(e.sym(),b);
-  splice(e,a.lNext());
-  splice(e.sym(),b.lNext());
-  e.endPoints(a.dest(),b.dest());
-}
-
-/******************* Geometric Predicates for Delaunay Diagrams **************************/
-
-/*
- * returns twice the area of the oriented triangle (a,b,c), i.e., the
- * area is positive if the triangle is oriented couterclockwise
- * a,b,c: Nodes
- * returns: number
- */
-function triArea(a,b,c)
-{
-  return (b.x()-a.x())*(c.y()-a.y())-(b.y()-a.y())*(c.x()-a.x());
-}
-
-/*
- * returns true if point d is inside the circle defined by the points a,b,c.
- * See Guibas and Stolfi (1985) p.107.
- * a,b,c,d: Nodes
- * returns: Boolean
- */
-function inCircle(a,b,c,d)
-{
-  return (a.x()*a.x()+a.y()*a.y()) * triArea(b,c,d) -
-         (b.x()*b.x()+b.y()*b.y()) * triArea(a,c,d) +
-         (c.x()*c.x()+c.y()*c.y()) * triArea(a,b,d) -
-         (d.x()*d.x()+d.y()*d.y()) * triArea(a,b,c) > 0;
-}
-
-/*
- * returns true if the points a,b,c are in a counterclockwise order
- * a,b,c: Nodes
- * returns: Boolean
- */
-function ccw(a,b,c)
-{
-  return triArea(a,b,c)>0;
-}
-
-/*
- * x: Point, e: Edge
- * returns: Boolean
- */
-function rightOf(x,e)
-{
-  return ccw(x,e.dest(),e.org());
-}
-
-/*
- * x: Node, e: Edge
- * returns: Boolean
- */
-function leftOf(x,e)
-{
-  return ccw(x,e.org(),e.dest());
-}
-
-/*
- * A predicate that determines if the point x is on the edge e.
- * The point is considered on if it is in the EPS-neighborhood
- * of the edge.
- * x: Node, e: Edge
- * returns: Boolean
- */
-function onEdge(x,e)
-{
-  var EPS=0.00000001;
-  var t1,t2,t3; // Numbers
-
-//  t1 = (x-e.org()).norm();
-  t1 = (x.x()-e.org().x())*(x.x()-e.org().x())+(x.y()-e.org().y())*(x.y()-e.org().y());
-
-//  t2 = (x-e.dest()).norm();
-  t2 = (x.x()-e.dest().x())*(x.x()-e.dest().x())+(x.y()-e.dest().y())*(x.y()-e.dest().y());
-
-  if (t1<EPS || t2<EPS) return true;
-
-//  t3 = (e.org()-e.dest()).norm();
-  t3 = (e.dest().x()-e.org().x())*(e.dest().x()-e.org().x())+(e.dest().y()-e.org().y())*(e.dest().y()-e.org().y());
-
-
-  if (t1>t3 || t2>t3) return false;
-
- // var line = new Line(e.org(), e.dest()); // @@ need Line class
-//  return Math.abs(line.eval(x)) < EPS;
-  var x1 = e.org().x(), y1=e.org().y();
-  var x2 = e.dest().x(), y2=e.dest().y();
-  var a,b,dist;
-  if (x2-x1==0) { // line is vertical
-    dist = x.x()-x2;
-  } else {
-    a=(y2-y1)/(x2-x1), b=y1-a*x1;
-    dist = a*x.x()+b*x.y();
-  }
-  return dist < EPS;
-}
 
 
 
@@ -447,6 +459,7 @@ if (g_canvas) {
   var s = new Subdivision(node1,node2,node3);
 
   s.insertSite(new Node(175,125));
+  s.insertSite(new Node(190,125));
 
   s.draw();
 
@@ -474,13 +487,3 @@ function line(x1,y1, x2,y2)
 }
 
 //################################################################################
-
-
-
-function alreadyDrawn(edge)
-{
-  for (var i=0; i<drawnEdges.length; i++)
-    if (edge===drawnEdges[i]) return true;
-  return false;
-}
-
