@@ -447,19 +447,21 @@ function makeEdge()
 
 
 var g_canvas = document.getElementById("canvas");
+var g_width = g_canvas.width;
+var g_height = g_canvas.height;
 var g_ctx;
 if (g_canvas) {
   g_ctx = g_canvas.getContext("2d");
   g_ctx.strokeStyle = "rgb(100,100,100)";
 
-  var node1 = new Node(100,100);
-  var node2 = new Node(200,100);
-  var node3 = new Node(200,200);
+  var node1 = new Node( -g_width, g_height+1);
+  var node2 = new Node(g_width/2.0, -g_height/2.0);
+  var node3 = new Node(2*g_width, g_height+1);
 
   var s = new Subdivision(node1,node2,node3);
 
-  s.insertSite(new Node(175,125));
-  s.insertSite(new Node(190,125));
+  s.insertSite(new Node(75,125));
+  s.insertSite(new Node(190,225));
 
   s.draw();
 
