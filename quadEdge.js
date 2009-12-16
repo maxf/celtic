@@ -299,6 +299,11 @@ Edge.prototype = {
       this.oPrev().draw();
       this.dPrev().draw();
     }
+  },
+
+  toString: function()
+  {
+    return "[Edge from "+this.org()+" to "+this.dest()+"]";
   }
 
 };
@@ -328,6 +333,13 @@ var QuadEdge = function() {
   this._edges[2]._next = this._edges[2];
   this._edges[3]._next = this._edges[1];
 };
+
+QuadEdge.prototype = {
+  toString: function()
+  {
+    return "[QuadEdge: base edge: "+this._edges[0]+", oNext: "+this._edges[0].oNext()+"]";
+  }
+}
 
 //== /QuadEdge ===================================================================
 
@@ -455,8 +467,22 @@ if (g_canvas) {
   g_ctx = g_canvas.getContext("2d");
   g_ctx.strokeStyle = "rgb(100,100,100)";
 
+
+  var node1 = new Node( 100-g_width/10, 100+g_height/10+1);
+  var node2 = new Node(100+g_width/20.0, 100-g_height/20.0);
+  var node3 = new Node(100+2*g_width/10, 100+g_height/10+1);
+
+  var s = new Subdivision(node1,node2,node3);
+
+  s.insertSite(new Node(107.5,112.5));
+  s.insertSite(new Node(119.0,122.5));
+
+  s.draw();
+
+
+/*
   var node1 = new Node( -g_width, g_height+1);
-  var node2 = new Node(g_width/2.0, -g_height/2.0);
+  var node2 = new Node(g_width/2, -g_height/2);
   var node3 = new Node(2*g_width, g_height+1);
 
   var s = new Subdivision(node1,node2,node3);
@@ -465,7 +491,7 @@ if (g_canvas) {
   s.insertSite(new Node(190,225));
 
   s.draw();
-
+*/
 }
 
 function circle(cx,cy,radius)
@@ -487,6 +513,16 @@ function line(x1,y1, x2,y2)
   g_ctx.lineTo(x2,y2);
   g_ctx.closePath();
   g_ctx.stroke();
+
+  print("line: ("+x1+","+y1+") to ("+x2+","+y2+")");
+
 }
+
+function print(text)
+{
+  if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
+  else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
+}
+
 
 //################################################################################
