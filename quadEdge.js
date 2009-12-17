@@ -96,7 +96,6 @@ Node.prototype = {
     //  t3 = (e.org()-e.dest()).norm();
     t3 = (e.dest().x()-e.org().x())*(e.dest().x()-e.org().x())+(e.dest().y()-e.org().y())*(e.dest().y()-e.org().y());
     
-    
     if (t1>t3 || t2>t3) return false;
     
     // var line = new Line(e.org(), e.dest()); // @@ need Line class
@@ -108,8 +107,9 @@ Node.prototype = {
       dist = this._x-x2;
     } else {
       a=(y2-y1)/(x2-x1), b=y1-a*x1;
-      dist = a*this._x+b*this._y;
+      dist = Math.abs(a*this._x+b*this._y);
     }
+
     return dist < EPS;
   }
 };
@@ -292,6 +292,7 @@ Edge.prototype = {
   {
     if (!this._drawn) {
       line(this.org().x(),this.org().y(),this.dest().x(),this.dest().y());
+//alert("("+this.org().x()+", "+this.org().y()+" - "+this.dest().x()+", "+this.dest().y()+")");
       this._drawn = true;
       this.org().draw();
       this.oNext().draw();
@@ -421,6 +422,7 @@ Subdivision.prototype = {
       e = base.oPrev();
     } while (e.lNext() != this.startingEdge);
 
+
     // Examine syspect edges to ensure that the Delaunay triangulation
     // is satisfied
     do {
@@ -429,10 +431,13 @@ Subdivision.prototype = {
         e.swap();
         e=e.oPrev();
       }
-      else if (e.oNext()==this.startingEdge) // no more suspect edges
+      else if (e.oNext()==this.startingEdge) {// no more suspect edges
         return;
+      }
       else // pop a suspect edge
+      {
         e=e.oNext().lPrev();
+      }
     } while(true);
   },
 
@@ -467,31 +472,19 @@ if (g_canvas) {
   g_ctx = g_canvas.getContext("2d");
   g_ctx.strokeStyle = "rgb(100,100,100)";
 
+  var scale=1;
+  var offset=-10;
 
-  var node1 = new Node( 100-g_width/10, 100+g_height/10+1);
-  var node2 = new Node(100+g_width/20.0, 100-g_height/20.0);
-  var node3 = new Node(100+2*g_width/10, 100+g_height/10+1);
-
-  var s = new Subdivision(node1,node2,node3);
-
-  s.insertSite(new Node(107.5,112.5));
-  s.insertSite(new Node(119.0,122.5));
-
-  s.draw();
-
-
-/*
-  var node1 = new Node( -g_width, g_height+1);
-  var node2 = new Node(g_width/2, -g_height/2);
-  var node3 = new Node(2*g_width, g_height+1);
+  var node1 = new Node(offset-g_width/scale,  offset+g_height/scale+1);
+  var node2 = new Node(offset+g_width/(2*scale), offset-g_height/(2*scale));
+  var node3 = new Node(offset+2*g_width/scale, offset+g_height/scale+1);
 
   var s = new Subdivision(node1,node2,node3);
 
-  s.insertSite(new Node(75,125));
-  s.insertSite(new Node(190,225));
+  s.insertSite(new Node(offset+75/scale,offset+125/scale));
+  s.insertSite(new Node(offset+190/scale,offset+225/scale));
 
   s.draw();
-*/
 }
 
 function circle(cx,cy,radius)
@@ -514,7 +507,7 @@ function line(x1,y1, x2,y2)
   g_ctx.closePath();
   g_ctx.stroke();
 
-  print("line: ("+x1+","+y1+") to ("+x2+","+y2+")");
+//  print("line: ("+x1+","+y1+") to ("+x2+","+y2+")");
 
 }
 
