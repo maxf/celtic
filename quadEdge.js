@@ -15,7 +15,7 @@ Node.prototype = {
   y: function() { return this._y; },
   setX: function(new_x) { this._x=new_x; },
   setY: function(new_y) { this._y=new_y; },
-  draw: function() { circle(this._x, this._y, 4.0); },
+  draw: function() { G2D.circle(this._x, this._y, 4.0); },
   toString: function() { return "Node: {x:"+this._x+", y:"+this._y+"}"; },
 
   /*
@@ -121,12 +121,16 @@ Node.prototype = {
  * Edge: Directed edge class
  */
 
+
+var allEdges = []; // The list of all existing edges. Useful for drawing
+
+
 function Edge() {
-//  this._data; // the edge's origin (Node)
-//  this._next; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
   this._num=0; // number of this edge in the QuadEdge that contains it
-//  this._quad; // the QuadEdge that this edge is the base edge of
-  this._drawn = false; // Boolean. True if this edge has already been drawn
+  this._data = null; // the edge's origin (Node)
+  this._next = null; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
+  this._quad = null; // the QuadEdge that this edge is the base edge of
+  allEdges.push(this);
 };
 
 Edge.prototype = {
@@ -266,6 +270,16 @@ Edge.prototype = {
   {
     this.spliceWith(this.oPrev());
     this.sym().spliceWith(this.sym().oPrev());
+
+    // remove this edge (and the 3 others from its quad) from the list of all edges
+    for (var edge in this._quad._edges) {
+      for (var i=0;i<allEdges.length;i++) {
+        if (allEdges[i]===edge) {
+          allEdges.splice(i,1);
+          break;
+        }
+      }
+    }
     delete this._quad;
   },
 
@@ -290,15 +304,14 @@ Edge.prototype = {
    */
   draw: function()
   {
-    if (!this._drawn) {
-      line(this.org().x(),this.org().y(),this.dest().x(),this.dest().y());
-//alert("("+this.org().x()+", "+this.org().y()+" - "+this.dest().x()+", "+this.dest().y()+")");
-      this._drawn = true;
-      this.org().draw();
-      this.oNext().draw();
-      this.dNext().draw();
-      this.oPrev().draw();
-      this.dPrev().draw();
+    for (var i=0;i<allEdges.length;i++) {
+      var edge=allEdges[i];
+      if (edge.org() && edge.dest()) { // skip face edges
+        G2D.line(edge.org().x(),edge.org().y(),edge.dest().x(),edge.dest().y());
+        edge.org().draw();
+        edge.dest().draw();
+      }
+
     }
   },
 
@@ -382,7 +395,7 @@ Subdivision.prototype = {
   _locate: function(x) {
     var e = this.startingEdge; //Edge
     while (true) {
-      if (x==e.org() || x==e.dest()) return e;
+      if ((x.x()==e.org().x()&&x.y()==e.org().y()) || (x.x()==e.dest().x()&&x.y()==e.dest().y())) return e;
       else if (x.isRightOf(e)) e=e.sym();
       else if (!x.isRightOf(e.oNext())) e=e.oNext();
       else if (!x.isRightOf(e.dPrev())) e=e.dPrev();
@@ -401,9 +414,9 @@ Subdivision.prototype = {
    */
   insertSite: function(x) {
     var e = this._locate(x); // Edge
-    if ((x==e.org())||(x==e.dest())) 
+    if ((x.x()==e.org().x()&&x.y()==e.org().y()) || (x.x()==e.dest().x()&&x.y()==e.dest().y()))
       // point is already in
-      return;
+      return this;
     else if (x.isOnEdge(e)) {
       e=e.oPrev();
       e.oNext().remove();
@@ -432,7 +445,7 @@ Subdivision.prototype = {
         e=e.oPrev();
       }
       else if (e.oNext()==this.startingEdge) {// no more suspect edges
-        return;
+        return this;
       }
       else // pop a suspect edge
       {
@@ -459,57 +472,6 @@ function makeEdge()
 }
 
 
-
-
-
-
-
-var g_canvas = document.getElementById("canvas");
-var g_width = g_canvas.width;
-var g_height = g_canvas.height;
-var g_ctx;
-if (g_canvas) {
-  g_ctx = g_canvas.getContext("2d");
-  g_ctx.strokeStyle = "rgb(100,100,100)";
-
-  var scale=1;
-  var offset=-10;
-
-  var node1 = new Node(offset-g_width/scale,  offset+g_height/scale+1);
-  var node2 = new Node(offset+g_width/(2*scale), offset-g_height/(2*scale));
-  var node3 = new Node(offset+2*g_width/scale, offset+g_height/scale+1);
-
-  var s = new Subdivision(node1,node2,node3);
-
-  s.insertSite(new Node(offset+75/scale,offset+125/scale));
-  s.insertSite(new Node(offset+190/scale,offset+225/scale));
-
-  s.draw();
-}
-
-function circle(cx,cy,radius)
-{
-  g_ctx.lineWidth = 2;
-  g_ctx.beginPath();
-  g_ctx.arc(cx,cy,radius,0,Math.TWO_PI,false);
-  g_ctx.closePath();
-  g_ctx.stroke();
-}
-
-
-function line(x1,y1, x2,y2)
-{
-//  g_ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
-//  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
-  g_ctx.beginPath();
-  g_ctx.moveTo(x1,y1);
-  g_ctx.lineTo(x2,y2);
-  g_ctx.closePath();
-  g_ctx.stroke();
-
-//  print("line: ("+x1+","+y1+") to ("+x2+","+y2+")");
-
-}
 
 function print(text)
 {

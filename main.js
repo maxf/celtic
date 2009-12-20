@@ -26,13 +26,16 @@ DelaunayCeltic.init = function()
 
 DelaunayCeltic.clicked = function(event)
 {
-  if (event.layerX) { // Firefox
-    event._x = event.layerX;
-    event._y = event.layerY;
-  } else if (event.offsetX) { // Opera
-    event._x = event.offsetX;
-    event._y = event.offsetY;
-  };
+//  if (event.layerX) { // Firefox
+//    event._x = event.layerX;
+//    event._y = event.layerY;
+//  } else if (event.offsetX) { // Opera
+//    event._x = event.offsetX;
+//    event._y = event.offsetY;
+//  };
+
+  event._x = event.clientX - this.canvas.offsetLeft;
+  event._y = event.clientY - this.canvas.offsetTop;
 
   G2D.clear(200,200,200);
   subdivision.insertSite(new Node(event._x, event._y))
