@@ -10,15 +10,17 @@ G2D.init = function(ctx,width, height)
 
 G2D.circle = function(cx,cy,radius)
 {
+  var originalWidth = this.ctx.lineWidth;
   this.ctx.lineWidth = 2;
   this.ctx.beginPath();
   this.ctx.arc(cx,cy,radius,0,Math.TWO_PI,false);
   this.ctx.closePath();
   this.ctx.stroke();
+  this.ctx.lineWidth = originalWidth;
 };
 
 
-G2D.line = function(x1,y1, x2,y2) 
+G2D.line = function(x1,y1, x2,y2)
 {
   this.ctx.beginPath();
   this.ctx.moveTo(x1,y1);

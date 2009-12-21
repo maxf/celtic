@@ -7,7 +7,7 @@ Graph.init = function(node1,node2,node3) {
   this.node2 = node2;
   this.node3 = node3;
   this.allNodes = [];
-  this.allEdges = [];
+  this.drawableEdges = [];
   this.subdivision = new Subdivision(node1,node2,node3);
   return this;
 };
@@ -32,7 +32,7 @@ Graph.draw = function()
   this.subdivision.draw();
 };
 
-Graph.allEdges = []; // The list of all existing edges.
+Graph.drawableEdges = []; // The list of all existing edges.
 Graph.allNodes = []; // The list of all existing nodes
 
 
@@ -173,7 +173,6 @@ function Edge() {
   this._data = null; // the edge's origin (Node)
   this._next = null; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
   this._quad = null; // the QuadEdge that this edge is the base edge of
-  Graph.allEdges.push(this);
 };
 
 Edge.prototype = {
@@ -337,15 +336,9 @@ Edge.prototype = {
    */
   draw: function()
   {
-    for (var i=0;i<Graph.allEdges.length;i++) {
-      var edge=Graph.allEdges[i];
-      if (edge.org() && edge.dest()) { // skip face edges
-        G2D.line(edge.org().x(),edge.org().y(),edge.dest().x(),edge.dest().y());
-        edge.org().draw();
-        edge.dest().draw();
-      }
-
-    }
+    G2D.line(this.org().x(),this.org().y(),this.dest().x(),this.dest().y());
+//    this.org().draw();
+    this.dest().draw();
   },
 
   toString: function()
@@ -379,6 +372,10 @@ var QuadEdge = function() {
   this._edges[1]._next = this._edges[3];
   this._edges[2]._next = this._edges[2];
   this._edges[3]._next = this._edges[1];
+
+  Graph.drawableEdges.push(this._edges[0]);
+
+
 };
 
 QuadEdge.prototype = {
@@ -492,7 +489,9 @@ Subdivision.prototype = {
   },
 
   draw: function() {
-    this.startingEdge.draw();
+//    this.startingEdge.draw();
+    for (var i=0;i<Graph.drawableEdges.length;i++)
+      Graph.drawableEdges[i].draw();
   }
 };
 
