@@ -1,5 +1,39 @@
 Math.TWO_PI = 6.2932;
 
+Graph = window.Graph || {};
+
+Graph.init = function(node1,node2,node3) {
+  this.node1 = node1;
+  this.node2 = node2;
+  this.node3 = node3;
+  this.subdivision = new Subdivision(node1,node2,node3);
+  return this;
+};
+
+Graph.insertNode = function(newNode) {
+  var e = this.subdivision.locate(newNode);
+  if (newNode.isAt(e.org()) || newNode.isAt(e.dest())) {
+    // point is already in, remove it and recompute the whole subdivision (yes, horrible)
+    this.subdivision = new Subdivision(this.node1, this.node2, this.node3);
+    var nodes = Graph.allNodes;
+    Graph.allNodes = [];
+    Graph.allEdges= [];
+    for (var i=nodes.length;i>2;i--)
+      this.subdivision.insertSite(nodes[i]);
+  } else
+    this.subdivision.insertSite(newNode);
+  return this;
+};
+
+Graph.draw = function()
+{
+  this.subdivision.draw();
+};
+
+Graph.allEdges = []; // The list of all existing edges.
+Graph.allNodes = []; // The list of all existing nodes
+
+
 
 //================================================================================
 // Node Class
@@ -41,6 +75,15 @@ Node.prototype = {
            (b.x()*b.x()+b.y()*b.y()) * a.triArea(c,this) +
            (c.x()*c.x()+c.y()*c.y()) * a.triArea(b,this) -
            (this._x*this._x+this._y*this._y) * a.triArea(b,c) > 0;
+  },
+
+  /*
+   * returns true if the node passed is near this node
+   */
+  isAt: function(n)
+  {
+    var threshold=5; //pixels
+    return Math.abs(n.x()-this._x)<threshold && Math.abs(n.y()-this._y)<threshold;
   },
 
   /*
@@ -122,15 +165,13 @@ Node.prototype = {
  */
 
 
-var allEdges = []; // The list of all existing edges. Useful for drawing
-
 
 function Edge() {
   this._num=0; // number of this edge in the QuadEdge that contains it
   this._data = null; // the edge's origin (Node)
   this._next = null; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
   this._quad = null; // the QuadEdge that this edge is the base edge of
-  allEdges.push(this);
+  Graph.allEdges.push(this);
 };
 
 Edge.prototype = {
@@ -270,16 +311,6 @@ Edge.prototype = {
   {
     this.spliceWith(this.oPrev());
     this.sym().spliceWith(this.sym().oPrev());
-
-    // remove this edge (and the 3 others from its quad) from the list of all edges
-    for (var edge in this._quad._edges) {
-      for (var i=0;i<allEdges.length;i++) {
-        if (allEdges[i]===edge) {
-          allEdges.splice(i,1);
-          break;
-        }
-      }
-    }
     delete this._quad;
   },
 
@@ -304,8 +335,8 @@ Edge.prototype = {
    */
   draw: function()
   {
-    for (var i=0;i<allEdges.length;i++) {
-      var edge=allEdges[i];
+    for (var i=0;i<Graph.allEdges.length;i++) {
+      var edge=Graph.allEdges[i];
       if (edge.org() && edge.dest()) { // skip face edges
         G2D.line(edge.org().x(),edge.org().y(),edge.dest().x(),edge.dest().y());
         edge.org().draw();
@@ -367,9 +398,9 @@ var Subdivision = function(a,b,c) {
   // Attributes:
   //  startingEdge: the first Edge of this subdivision, from a to b
 
-  var da = new Node(a.x(), a.y());
-  var db = new Node(b.x(), b.y());
-  var dc = new Node(c.x(), c.y());
+  var da = new Node(a.x(), a.y()); Graph.allNodes.push(da);
+  var db = new Node(b.x(), b.y()); Graph.allNodes.push(db);
+  var dc = new Node(c.x(), c.y()); Graph.allNodes.push(dc);
   var ea = makeEdge();
   ea.endPoints(da,db);
   var eb = makeEdge();
@@ -392,7 +423,7 @@ Subdivision.prototype = {
    *
    * x : Node
    */
-  _locate: function(x) {
+  locate: function(x) {
     var e = this.startingEdge; //Edge
     while (true) {
       if ((x.x()==e.org().x()&&x.y()==e.org().y()) || (x.x()==e.dest().x()&&x.y()==e.dest().y())) return e;
@@ -413,14 +444,18 @@ Subdivision.prototype = {
    * x: Node
    */
   insertSite: function(x) {
-    var e = this._locate(x); // Edge
-    if ((x.x()==e.org().x()&&x.y()==e.org().y()) || (x.x()==e.dest().x()&&x.y()==e.dest().y()))
+
+    var e = this.locate(x); // Edge
+    if (x.isAt(e.org()) || x.isAt(e.dest())) {
       // point is already in
       return this;
+    }
     else if (x.isOnEdge(e)) {
       e=e.oPrev();
       e.oNext().remove();
     }
+
+    Graph.allNodes.push(x);    
 
     // Connect the new point to the vertices of the containing
     // triangle (or quadrilateral, if the new point fell on an
@@ -453,7 +488,6 @@ Subdivision.prototype = {
       }
     } while(true);
   },
-
 
   draw: function() {
     this.startingEdge.draw();
