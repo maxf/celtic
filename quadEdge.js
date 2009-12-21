@@ -6,6 +6,8 @@ Graph.init = function(node1,node2,node3) {
   this.node1 = node1;
   this.node2 = node2;
   this.node3 = node3;
+  this.allNodes = [];
+  this.allEdges = [];
   this.subdivision = new Subdivision(node1,node2,node3);
   return this;
 };
@@ -14,12 +16,12 @@ Graph.insertNode = function(newNode) {
   var e = this.subdivision.locate(newNode);
   if (newNode.isAt(e.org()) || newNode.isAt(e.dest())) {
     // point is already in, remove it and recompute the whole subdivision (yes, horrible)
-    this.subdivision = new Subdivision(this.node1, this.node2, this.node3);
-    var nodes = Graph.allNodes;
-    Graph.allNodes = [];
-    Graph.allEdges= [];
-    for (var i=nodes.length;i>2;i--)
-      this.subdivision.insertSite(nodes[i]);
+    var nodes = this.allNodes;
+    this.init(this.node1, this.node2, this.node3);
+    for (var i=3; i<nodes.length; i++) {
+      if (!newNode.isAt(nodes[i]))
+        this.subdivision.insertSite(nodes[i]);
+    }
   } else
     this.subdivision.insertSite(newNode);
   return this;
@@ -58,7 +60,7 @@ Node.prototype = {
    * b,c: Nodes
    * returns: number
    */
-  triArea: function(b,c) 
+  triArea: function(b,c)
   {
     return (b.x()-this._x)*(c.y()-this._y)-(b.y()-this._y)*(c.x()-this._x);
   },
@@ -127,20 +129,20 @@ Node.prototype = {
   {
     var EPS=0.00000001;
     var t1,t2,t3; // Numbers
-    
+
     //  t1 = (x-e.org()).norm();
     t1 = (this._x-e.org().x())*(this._x-e.org().x())+(this._y-e.org().y())*(this._y-e.org().y());
-    
+
     //  t2 = (x-e.dest()).norm();
     t2 = (this._x-e.dest().x())*(this._x-e.dest().x())+(this._y-e.dest().y())*(this._y-e.dest().y());
-    
+
     if (t1<EPS || t2<EPS) return true;
-    
+
     //  t3 = (e.org()-e.dest()).norm();
     t3 = (e.dest().x()-e.org().x())*(e.dest().x()-e.org().x())+(e.dest().y()-e.org().y())*(e.dest().y()-e.org().y());
-    
+
     if (t1>t3 || t2>t3) return false;
-    
+
     // var line = new Line(e.org(), e.dest()); // @@ need Line class
     //  return Math.abs(line.eval(x)) < EPS;
     var x1 = e.org().x(), y1=e.org().y();
@@ -267,7 +269,7 @@ Edge.prototype = {
 
   /*
    * Attach edges together or break them appart
-   * 
+   *
    * b: the edge to attach or break (Edge)
    */
   spliceWith: function(b)
@@ -278,7 +280,7 @@ Edge.prototype = {
     var t2 = this.oNext(); // Edge
     var t3 = beta.oNext(); // Edge
     var t4 = alpha.oNext(); // Edge
-    
+
     this._next = t1;
     b._next = t2;
     alpha._next = t3;
@@ -291,7 +293,7 @@ Edge.prototype = {
    * origin of b in such a way that all 3 have the same left face
    * after the connection is complete. Additionally the data pointers
    * of the new edge are set.
-   * 
+   *
    * parameters: b: Edge
    * returns: Edge
    */
@@ -355,7 +357,7 @@ Edge.prototype = {
 //== /Edge =======================================================================
 
 //================================================================================
-/* 
+/*
  * QuadEdge Class
  */
 
@@ -440,7 +442,7 @@ Subdivision.prototype = {
    * is still a Delaunay triangulation. This is based on the
    * pseudocode from Guibas and Stolfi (1985) p.120, with slight
    * modifications and a bug fix.
-   * 
+   *
    * x: Node
    */
   insertSite: function(x) {
@@ -455,7 +457,7 @@ Subdivision.prototype = {
       e.oNext().remove();
     }
 
-    Graph.allNodes.push(x);    
+    Graph.allNodes.push(x);
 
     // Connect the new point to the vertices of the containing
     // triangle (or quadrilateral, if the new point fell on an
