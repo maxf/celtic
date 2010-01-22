@@ -16,7 +16,7 @@ DelaunayCeltic.init = function()
     var node2 = new Node(offset+this.width/(2*scale), offset-this.height/(2*scale));
     var node3 = new Node(offset+2*this.width/scale, offset+this.height/scale+1);
     
-    Graph.init(node1,node2,node3);
+    this.graph = new Subdivision(node1,node2,node3);
   }
 };
 
@@ -26,8 +26,12 @@ DelaunayCeltic.clicked = function(event)
   event._y = event.clientY - this.canvas.offsetTop;
 
   G2D.clear(200,200,200);
-  Graph.insertNode(new Node(event._x, event._y))
-       .draw();
+  this.graph.insertSite(new Node(event._x, event._y))
+            .draw();
+
+  this.pattern = new Pattern(this.graph, 1.0, 1.0);
+  this.pattern.draw();
+
 };
 
 window.addEventListener("load", DelaunayCeltic.init, false);

@@ -35,8 +35,6 @@ Graph.draw = function()
 Graph.drawableEdges = []; // The list of all existing edges.
 Graph.allNodes = []; // The list of all existing nodes
 
-
-
 //================================================================================
 // Node Class
 
@@ -173,6 +171,14 @@ function Edge() {
   this._data = null; // the edge's origin (Node)
   this._next = null; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
   this._quad = null; // the QuadEdge that this edge is the base edge of
+
+
+  // Stuff for celtic curves
+  // through an Edge pass 2 curves, one coming clockwise, the other anticlockwise
+  this.curveDrawn = new Array(2);
+  this.curveDrawn[this.LEFT_TO_RIGHT] = false;
+  this.curveDrawn[this.RIGHT_TO_LEFT] = false;
+
 };
 
 Edge.prototype = {
@@ -397,9 +403,9 @@ var Subdivision = function(a,b,c) {
   // Attributes:
   //  startingEdge: the first Edge of this subdivision, from a to b
 
-  var da = new Node(a.x(), a.y()); Graph.allNodes.push(da);
-  var db = new Node(b.x(), b.y()); Graph.allNodes.push(db);
-  var dc = new Node(c.x(), c.y()); Graph.allNodes.push(dc);
+  var da = new Node(a.x(), a.y());// Graph.allNodes.push(da);
+  var db = new Node(b.x(), b.y());// Graph.allNodes.push(db);
+  var dc = new Node(c.x(), c.y());// Graph.allNodes.push(dc);
   var ea = makeEdge();
   ea.endPoints(da,db);
   var eb = makeEdge();
@@ -454,7 +460,7 @@ Subdivision.prototype = {
       e.oNext().remove();
     }
 
-    Graph.allNodes.push(x);
+//    Graph.allNodes.push(x);
 
     // Connect the new point to the vertices of the containing
     // triangle (or quadrilateral, if the new point fell on an
