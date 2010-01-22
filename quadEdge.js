@@ -304,7 +304,9 @@ Edge.prototype = {
    */
   connectTo: function(b)
   {
-    var e=makeEdge();
+//    var e=makeEdge();
+    var e = new QuadEdge().baseEdge();
+
     e.spliceWith(this.lNext());
     e.sym().spliceWith(b);
     e.endPoints(this.dest(),b.org());
@@ -360,7 +362,7 @@ Edge.prototype = {
  * QuadEdge Class
  */
 
-var QuadEdge = function() {
+var QuadEdge = function(node1, node2) {
   this._edges = new Array(4);
   // array of 4 Edges:
   // [0] the base edge of this QuadEdge
@@ -379,12 +381,20 @@ var QuadEdge = function() {
   this._edges[2]._next = this._edges[2];
   this._edges[3]._next = this._edges[1];
 
-  Graph.drawableEdges.push(this._edges[0]);
+  if (node1 && node2)
+    this._edges[0].endPoints(node1, node2);
 
+  Graph.drawableEdges.push(this._edges[0]);
 
 };
 
 QuadEdge.prototype = {
+
+  baseEdge: function()
+  {
+    return this._edges[0];
+  },
+
   toString: function()
   {
     return "[QuadEdge: base edge: "+this._edges[0]+", oNext: "+this._edges[0].oNext()+"]";
@@ -406,9 +416,15 @@ var Subdivision = function(a,b,c) {
   var da = new Node(a.x(), a.y());// Graph.allNodes.push(da);
   var db = new Node(b.x(), b.y());// Graph.allNodes.push(db);
   var dc = new Node(c.x(), c.y());// Graph.allNodes.push(dc);
-  var ea = makeEdge();
-  ea.endPoints(da,db);
-  var eb = makeEdge();
+
+//  var ea = makeEdge();
+//  ea.endPoints(da,db);
+
+  var ea = new QuadEdge(da, db).baseEdge();
+
+//  var eb = makeEdge();
+  var eb = new QuadEdge().baseEdge();
+
   ea.sym().spliceWith(eb);
   eb.endPoints(db,dc);
   var ec = makeEdge();
