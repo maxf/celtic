@@ -164,8 +164,6 @@ Node.prototype = {
  * Edge: Directed edge class
  */
 
-
-
 function Edge() {
   this._num=0; // number of this edge in the QuadEdge that contains it
   this._data = null; // the edge's origin (Node)
@@ -302,10 +300,10 @@ Edge.prototype = {
    * parameters: b: Edge
    * returns: Edge
    */
-  connectTo: function(b)
+  connectTo: function(edgeConstructor, b)
   {
 //    var e=makeEdge();
-    var e = new QuadEdge().baseEdge();
+    var e = new QuadEdge(edgeConstructor).baseEdge();
 
     e.spliceWith(this.lNext());
     e.sym().spliceWith(b);
@@ -362,7 +360,7 @@ Edge.prototype = {
  * QuadEdge Class
  */
 
-var QuadEdge = function(node1, node2) {
+var QuadEdge = function(edgeConstructor, node1, node2) {
   this._edges = new Array(4);
   // array of 4 Edges:
   // [0] the base edge of this QuadEdge
@@ -371,7 +369,7 @@ var QuadEdge = function(node1, node2) {
   // [3] the dual of the base edge which goes from its left to its right
 
   for (var i=0;i<4;i++) {
-    this._edges[i] = new Edge();
+    this._edges[i] = new edgeConstructor();
     this._edges[i]._num=i;
     this._edges[i]._quad = this;
   }
@@ -407,7 +405,7 @@ QuadEdge.prototype = {
 /*
  * Subdivision: a subdivision of the plane into polygons
  */
-var Subdivision = function(a,b,c) {
+var Subdivision = function(a,b,c,edgeConstructor) {
   // a,b,c are the Nodes of the original triangle
 
   // Attributes:
@@ -420,10 +418,10 @@ var Subdivision = function(a,b,c) {
 //  var ea = makeEdge();
 //  ea.endPoints(da,db);
 
-  var ea = new QuadEdge(da, db).baseEdge();
+  var ea = new QuadEdge(edgeConstructor, da, db).baseEdge();
 
 //  var eb = makeEdge();
-  var eb = new QuadEdge().baseEdge();
+  var eb = new QuadEdge(edgeConstructor).baseEdge();
 
   ea.sym().spliceWith(eb);
   eb.endPoints(db,dc);
@@ -522,9 +520,9 @@ Subdivision.prototype = {
 /*
  * creates a new quadEdge and return its base edge
  */
-function makeEdge()
+function makeEdge(edgeConstructor)
 {
-  var q = new QuadEdge();
+  var q = new QuadEdge(edgeConstructor);
   return q._edges[0]; // type Edge
 }
 
