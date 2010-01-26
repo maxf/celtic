@@ -16,7 +16,7 @@ DelaunayCeltic.init = function()
     var node2 = new Node(offset+this.width/(2*scale), offset-this.height/(2*scale));
     var node3 = new Node(offset+2*this.width/scale, offset+this.height/scale+1);
     
-    this.graph = new Subdivision(node1,node2,node3);
+    this.graph = new Subdivision(node1,node2,node3, Edge);
   }
 };
 
