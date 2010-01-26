@@ -1,3 +1,51 @@
+function CelticEdge() {
+  Edge.call(this);
+};
+
+// Prototype chain for inheritance
+CelticEdge.prototype = new Edge();
+CelticEdge.constructor = CelticEdge;
+CelticEdge.superclass = Edge.prototype;
+
+CelticEdge.prototype.endPoints = function(n1,n2)
+{
+  CelticEdge.superclass.endPoints.call(this,n1,n2);
+
+  var n2x=this.dest().x(), n2y=this.dest().y();
+  var n1x=this.org().x(), n1y=this.org().y();
+  this.angle1=Math.atan2(n2y - n1y, n2x - n1x);
+  if (this.angle1 < 0) this.angle1+=TWO_PI;
+  this.angle2=Math.atan2(n1y - n2y, n1x - n2x);
+  if (this.angle2 < 0) this.angle2+=TWO_PI;  
+};
+
+CelticEdge.prototype.angle = function(n)
+{
+  // return the angle of the edge at Node n
+  if (n==this.org()) return this.angle1; else return this.angle2;
+};
+
+CelticEdge.prototype.other_node = function(n)
+{
+  if (n==this.org()) return this.dest(); else return this.org();
+};
+
+CelticEdge.prototype.angle_to = function(e2, node, direction)
+{
+  /* returns the absolute angle from this edge to "edge2" around
+   "node" following "direction" */
+  var a;
+
+  if (direction===CLOCKWISE)
+    a=this.angle(node) - e2.angle(node);
+  else
+    a=e2.angle(node) - this.angle(node);
+
+  if (a<0) return a+2*PI; else return a;
+};
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function Params()
 {
   var step=0.01; // parameter increment for progressive rendering
