@@ -183,57 +183,79 @@ Edge.prototype = {
   /*
    * returns (as an Edge) the dual of the current edge, directed from its right to its left
    */
-  rot: function() { return this._quad._edges[(this._num+1)%4]; },
+  rot: function() { 
+    return this._quad._edges[(this._num+1)%4]; 
+  },
 
   /*
    * returns (as an Edge) the dual of the current edge, directed from its left to its right
    */
-  invRot: function() { return this._quad._edges[(this._num+3)%4]; },
+  invRot: function() { 
+    return this._quad._edges[(this._num+3)%4]; 
+  },
 
   /*
    * returns (as an Edge) the edge from the destination to the origin of this edge
    */
-  sym: function() { return this._quad._edges[(this._num+2)%4]; },
+  sym: function() { 
+    return this._quad._edges[(this._num+2)%4]; 
+  },
 
   /*
    * returns (as an Edge) the next ccw edge around (from) the origin of the current edge
    */
-  oNext: function() { return this._next; },
+  oNext: function() {
+    return this._next;
+  },
 
   /*
    * returns (as an Edge) the next cw edge around (from) the origin of the current edge
    */
-  oPrev: function() { return this.rot().oNext().rot(); },
+  oPrev: function() { 
+    return this.rot().oNext().rot(); 
+  },
 
   /*
    * returns (as an Edge) the next ccw edge around (into) the destination of the current edge
    */
-  dNext: function() { return this.sym().oNext().sym(); },
+  dNext: function() { 
+    return this.sym().oNext().sym(); 
+  },
 
   /*
    * returns (as an Edge) the next cw edge around (into) the destination of the current edge
    */
-  dPrev: function() { return this.invRot().oNext().invRot(); },
+  dPrev: function() { 
+    return this.invRot().oNext().invRot();
+  },
 
   /*
    * returns (as an Edge) the ccw edge around the left face following the current edge
    */
-  lNext: function() { return this.invRot().oNext().rot(); },
+  lNext: function() { 
+    return this.invRot().oNext().rot();
+  },
 
   /*
    * returns (as an Edge) the ccw edge around the left face before the current edge
    */
-  lPrev: function() { return this.oNext().sym(); },
+  lPrev: function() {
+    return this.oNext().sym();
+  },
 
   /*
    * returns (as an Edge) the edge around the right face ccw following the current edge
    */
-  rNext: function() { return this.rot().oNext().invRot(); },
+  rNext: function() {
+    return this.rot().oNext().invRot();
+  },
 
   /*
    * returns (as an Edge) the edge around the right face ccw before the current edge
    */
-  rPrev: function() { return this.sym().oNext(); },
+  rPrev: function() {
+    return this.sym().oNext();
+  },
 
   /*
    * returns the origin node (as Node) of this edge
