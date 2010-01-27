@@ -29,8 +29,8 @@ DelaunayCeltic.clicked = function(event)
   this.subdivision.insertSite(new Node(event._x, event._y))
                    .draw();
 
-  this.pattern = new Pattern(this.subdivision, 1.0, 1.0);
-  this.pattern.draw();
+//  this.pattern = new Pattern(this.subdivision, 1.0, 1.0);
+//  this.pattern.draw();
 
 };
 

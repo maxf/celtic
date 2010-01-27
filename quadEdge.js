@@ -1,40 +1,5 @@
 Math.TWO_PI = 6.2932;
 
-Graph = window.Graph || {};
-
-Graph.init = function(node1,node2,node3) {
-  this.node1 = node1;
-  this.node2 = node2;
-  this.node3 = node3;
-  this.allNodes = [];
-  this.drawableEdges = [];
-  this.subdivision = new Subdivision(node1,node2,node3);
-  return this;
-};
-
-Graph.insertNode = function(newNode) {
-  var e = this.subdivision.locate(newNode);
-  if (newNode.isAt(e.org()) || newNode.isAt(e.dest())) {
-    // point is already in, remove it and recompute the whole subdivision (yes, horrible)
-    var nodes = this.allNodes;
-    this.init(this.node1, this.node2, this.node3);
-    for (var i=3; i<nodes.length; i++) {
-      if (!newNode.isAt(nodes[i]))
-        this.subdivision.insertSite(nodes[i]);
-    }
-  } else
-    this.subdivision.insertSite(newNode);
-  return this;
-};
-
-Graph.draw = function()
-{
-  this.subdivision.draw();
-};
-
-Graph.drawableEdges = []; // The list of all existing edges.
-Graph.allNodes = []; // The list of all existing nodes
-
 //================================================================================
 // Node Class
 
@@ -403,9 +368,6 @@ var QuadEdge = function(edgeConstructor, node1, node2) {
 
   if (node1 && node2)
     this._edges[0].endPoints(node1, node2);
-
-  Graph.drawableEdges.push(this._edges[0]);
-
 };
 
 QuadEdge.prototype = {
@@ -423,14 +385,19 @@ QuadEdge.prototype = {
 
 //== /QuadEdge ===================================================================
 
+
+
+
 //================================================================================
 /*
  * Subdivision: a subdivision of the plane into polygons
  */
+
 var Subdivision = function(a,b,c,edgeConstructor) {
   // a,b,c are the Nodes of the original triangle
 
   this.edgeType = edgeConstructor;
+  this.drawableEdges = []; // an linear array of edges for easy drawing
 
   // Attributes:
   //  startingEdge: the first Edge of this subdivision, from a to b
@@ -455,9 +422,17 @@ var Subdivision = function(a,b,c,edgeConstructor) {
   ec.endPoints(dc,da);
   ec.sym().spliceWith(ea);
   this.startingEdge = ea;
+
+  this.drawableEdges.push(ea, eb, ec);
+
+
 };
 
 Subdivision.prototype = {
+
+  toString: function() {
+    return "Subdivision: {edgeType: "+this.edgeType+"startingEdge: "+this.startingEdge+"}";
+  },
 
   /*
    * Returns an edge e, such that either x is on e, or e is an edge of
@@ -535,9 +510,29 @@ Subdivision.prototype = {
   },
 
   draw: function() {
-//    this.startingEdge.draw();
-    for (var i=0;i<Graph.drawableEdges.length;i++)
-      Graph.drawableEdges[i].draw();
+    var edgesToDraw=[];
+    var addedEdges=[this.startingEdge];
+    var e,n,d;
+    this.startingEdge.added=true;
+
+    while (addedEdges.length>0) {
+      e=addedEdges.pop();
+      edgesToDraw.push(e);
+      var neighbours=[e.sym(), e.oNext(), e.oPrev(), e.dNext(), e.dPrev()];
+      for (var i=0; i<neighbours.length;i++) {
+        n=neighbours[i];
+        if (!n.added) {
+          n.added=true;
+          addedEdges.push(n);
+        }
+      }
+    }
+    // draw all edges and reset flags.
+    for (var i=0;i<edgesToDraw.length;i++) {
+      d=edgesToDraw[i];
+      d.added=false;
+      d.draw();
+    }
   }
 };
 
