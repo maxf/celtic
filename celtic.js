@@ -137,21 +137,14 @@ function line(x1,y1, x2,y2)
 
 function EdgeCouple(nb_edges)
 {
-  var size = nb_edges;
-  var array = new Array(size);
-
-  // Accessors
-  this.getSize = function() { return size;  };
-  this.getArray = function() { return array;  };
-
-  // constructor
-  for (var i=0;i<size;i++) {
-    array[i] = new Array(2);
-    array[i][CLOCKWISE] = 0;
-    array[i][ANTICLOCKWISE] = 0;
+  this.size = nb_edges;
+  this.array = new Array(this.size);
+  for (var i=0;i<this.size;i++) {
+    this.array[i] = new Array(2);
+    this.array[i][CLOCKWISE] = 0;
+    this.array[i][ANTICLOCKWISE] = 0;
   }
 }
-
 
 //======================================================================
 
@@ -179,14 +172,20 @@ function EdgeDirection (edge,direction)
 
 
 
-// A Pattern is a set of closed curves that form a motif
-function Pattern(new_g, new_shape1, new_shape2)
+/* Class Pattern
+ * A set of closed curves that form a motif
+ *
+ * Parameters:
+ * subdivision: a Subdivision to base the motif on
+ * shape1, shape2: 2 numbers that control the form of the curves
+ */
+function Pattern(subdivision, shape1, shape2)
 {
   this.splines = [];
-  this.shape1=new_shape1;
-  this.shape2=new_shape2;
-  this.graph=new_g;
-  this.ec=new EdgeCouple(new_g.edgeList.length);
+  this.shape1=shape1;
+  this.shape2=shape2;
+  this.graph=subdivision;
+  this.ec=new EdgeCouple(subdivision.edgeList.length);
   return this;
 }
 
@@ -213,9 +212,9 @@ Pattern.prototype = {
 
   edge_couple_set: function(edgeDirection, value)
   {
-    for (var i=0;i<graph.edges.length;i++)
-      if (graph.edges[i]==edgeDirection.getEdge()) {
-        ec.getArray()[i][edgeDirection.getDirection()]=value;
+    for (var i=0;i<this.graph.edgeList.length;i++)
+      if (this.graph.edgeList[i]==edgeDirection.getEdge()) {
+        this.ec.array[i][edgeDirection.getDirection()]=value;
         return;
       }
   },
@@ -289,13 +288,13 @@ Pattern.prototype = {
   next_unfilled_couple: function()
   {
     var ed=null; //EdgeDirection
-    for (var i=0;i<this.ec.length;i++) {
-      if (ec[i][CLOCKWISE]==0) {
-        ed = new EdgeDirection(graph.edges[i], CLOCKWISE);
+    for (var i=0;i<this.ec.size;i++) {
+      if (this.ec.array[i][CLOCKWISE]==0) {
+        ed = new EdgeDirection(this.graph.edgeList[i], CLOCKWISE);
         return ed;
       }
-      else if (ec[i][ANTICLOCKWISE]==0) {
-        ed = new EdgeDirection(graph.edges[i], ANTICLOCKWISE);
+      else if (this.ec.array[i][ANTICLOCKWISE]==0) {
+        ed = new EdgeDirection(this.graph.edgeList[i], ANTICLOCKWISE);
         return ed;
       }
     }
@@ -312,16 +311,17 @@ Pattern.prototype = {
     var first_edge_direction, current_edge_direction;
 
     while ((first_edge_direction=this.next_unfilled_couple())!=null) {
+
       // start a new loop
       s=new Spline(randomInt(100,255), randomInt(100,255), randomInt(100,255));
 
       current_edge_direction = new EdgeDirection(first_edge_direction.getEdge(),
                                                  first_edge_direction.getDirection());
-      current_node=first_node=current_edge_direction.getEdge().getNode1();
+      current_node=first_node=current_edge_direction.getEdge().org();
 
       do {
         this.edge_couple_set(current_edge_direction, 1);
-        next_edge = graph.next_edge_around(current_node,current_edge_direction);
+        next_edge = this.graph.next_edge_around(current_node,current_edge_direction);
 
         // add the spline segment to the spline
         this.addBezierCurve(s,current_node, current_edge_direction.getEdge(), next_edge, current_edge_direction.getDirection());

@@ -1,8 +1,6 @@
-DelaunayCeltic = window.DelaunayCeltic || {};
+DelaunayCeltic = window.DelaunayCeltic || {
 
-
-
-DelaunayCeltic.init = function()
+init: function()
 {
   DelaunayCeltic.canvas = document.getElementById("canvas");
   DelaunayCeltic.width = DelaunayCeltic.canvas.width;
@@ -23,9 +21,9 @@ DelaunayCeltic.init = function()
     // simulate a click, for testing
     DelaunayCeltic.clicked({clientX: 300, clientY: 200});
   }
-};
+},
 
-DelaunayCeltic.clicked = function(event)
+clicked: function(event)
 {
   event._x = event.clientX - DelaunayCeltic.canvas.offsetLeft;
   event._y = event.clientY - DelaunayCeltic.canvas.offsetTop;
@@ -37,6 +35,7 @@ DelaunayCeltic.clicked = function(event)
   DelaunayCeltic.pattern = new Pattern(DelaunayCeltic.subdivision, 1.0, 1.0)
     .makeCurves()
     .draw();
+}
 };
 
 window.addEventListener("load", DelaunayCeltic.init, false);
