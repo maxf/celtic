@@ -487,36 +487,55 @@ Subdivision.prototype = {
 	 * draws the subdivision
 	 */
   draw: function() {
-  	if (this.edgeList)
-	    for (var i=0;i<this.edgeList.length;i++)
-    	  this.edgeList[i].draw();
+  	if (this._edgeList) {
+	    for (var i=0;i<this._edgeList.length;i++) {
+    	  this._edgeList[i].draw();
+      }
+    }
+  },
+
+  /*
+   * check if the edge list contains the passed edge. Returns boolean
+   */
+  _edgeListContains: function(e) {
+    var c;
+    for (var j=this._edgeList.length-1; j>=0; j--) {
+      c = this._edgeList[j];
+      if (e==c) {
+        return true;
+      }
+    }
+    return false;
   },
 
   /*
    * Make a linear list of edges (e.g. for drawing)
    */
   _listEdges: function() {
-    this.edgeList=[];
+    this._edgeList=[];
     var addedEdges=[this.startingEdge];
     var e,n,d;
     this.startingEdge.added=true;
 
     while (addedEdges.length>0) {
       e=addedEdges.pop();
-      this.edgeList.push(e);
-      var neighbours=[e.sym(), e.oNext(), e.oPrev(), e.dNext(), e.dPrev()];
-      for (var i=0; i<neighbours.length;i++) {
+      if(!this._edgeListContains(e.sym())) {
+        this._edgeList.push(e);
+      }
+      var neighbours=[e.oNext(), e.oPrev(), e.dNext(), e.dPrev()];
+      for (var i=neighbours.length-1; i>=0;i--) {
         n=neighbours[i];
         if (!n.added) {
-          n.added=true;
+          n.added=n.sym().added=true;
           addedEdges.push(n);
         }
       }
     }
     // reset flags.
-    for (var i=0;i<this.edgeList.length;i++) {
-      d=this.edgeList[i];
+    for (var i=this._edgeList.length-1;i>=0;i--) {
+      d=this._edgeList[i];
       d.added=false;
+      d.sym().added=false;
     }
   },
 
