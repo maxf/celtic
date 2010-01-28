@@ -1,6 +1,6 @@
 Math.TWO_PI = 6.2932;
 
-//================================================================================
+//== Node ==========================================================================
 // Node Class
 
 var Node = function(new_x, new_y)
@@ -124,7 +124,7 @@ Node.prototype = {
 
 //== /Node =======================================================================
 
-//================================================================================
+//== Edge ========================================================================
 /*
  * Edge: Directed edge class
  */
@@ -148,22 +148,22 @@ Edge.prototype = {
   /*
    * returns (as an Edge) the dual of the current edge, directed from its right to its left
    */
-  rot: function() { 
-    return this._quad._edges[(this._num+1)%4]; 
+  rot: function() {
+    return this._quad._edges[(this._num+1)%4];
   },
 
   /*
    * returns (as an Edge) the dual of the current edge, directed from its left to its right
    */
-  invRot: function() { 
-    return this._quad._edges[(this._num+3)%4]; 
+  invRot: function() {
+    return this._quad._edges[(this._num+3)%4];
   },
 
   /*
    * returns (as an Edge) the edge from the destination to the origin of this edge
    */
-  sym: function() { 
-    return this._quad._edges[(this._num+2)%4]; 
+  sym: function() {
+    return this._quad._edges[(this._num+2)%4];
   },
 
   /*
@@ -176,28 +176,28 @@ Edge.prototype = {
   /*
    * returns (as an Edge) the next cw edge around (from) the origin of the current edge
    */
-  oPrev: function() { 
-    return this.rot().oNext().rot(); 
+  oPrev: function() {
+    return this.rot().oNext().rot();
   },
 
   /*
    * returns (as an Edge) the next ccw edge around (into) the destination of the current edge
    */
-  dNext: function() { 
-    return this.sym().oNext().sym(); 
+  dNext: function() {
+    return this.sym().oNext().sym();
   },
 
   /*
    * returns (as an Edge) the next cw edge around (into) the destination of the current edge
    */
-  dPrev: function() { 
+  dPrev: function() {
     return this.invRot().oNext().invRot();
   },
 
   /*
    * returns (as an Edge) the ccw edge around the left face following the current edge
    */
-  lNext: function() { 
+  lNext: function() {
     return this.invRot().oNext().rot();
   },
 
@@ -341,8 +341,7 @@ Edge.prototype = {
 
 };
 //== /Edge =======================================================================
-
-//================================================================================
+//== QuadEdge ====================================================================
 /*
  * QuadEdge Class
  */
@@ -384,11 +383,7 @@ QuadEdge.prototype = {
 }
 
 //== /QuadEdge ===================================================================
-
-
-
-
-//================================================================================
+//== Subdivision==================================================================
 /*
  * Subdivision: a subdivision of the plane into polygons
  */
@@ -435,25 +430,6 @@ Subdivision.prototype = {
   },
 
   /*
-   * Returns an edge e, such that either x is on e, or e is an edge of
-   * a triangle containing x. The search starts from startingEdge and
-   * proceeds in the general direction of x. Based on the pseudocode
-   * in Guibas and Stolfi (1985) p.121.
-   *
-   * x : Node
-   */
-  locate: function(x) {
-    var e = this.startingEdge; //Edge
-    while (true) {
-      if ((x.x()==e.org().x()&&x.y()==e.org().y()) || (x.x()==e.dest().x()&&x.y()==e.dest().y())) return e;
-      else if (x.isRightOf(e)) e=e.sym();
-      else if (!x.isRightOf(e.oNext())) e=e.oNext();
-      else if (!x.isRightOf(e.dPrev())) e=e.dPrev();
-      else return e;
-    }
-  },
-
-  /*
    * Inserts a new point into a subdivision representing a Delaunay
    * triangulation, and fixes the affected edges so that the result
    * is still a Delaunay triangulation. This is based on the
@@ -463,10 +439,10 @@ Subdivision.prototype = {
    * x: Node
    */
   insertSite: function(x) {
-
-    var e = this.locate(x); // Edge
+    var e = this._locate(x); // Edge
     if (x.isAt(e.org()) || x.isAt(e.dest())) {
       // point is already in
+      this._listEdges(); // TODO: we should add edges incrementally
       return this;
     }
     else if (x.isOnEdge(e)) {
@@ -474,13 +450,10 @@ Subdivision.prototype = {
       e.oNext().remove();
     }
 
-//    Graph.allNodes.push(x);
-
     // Connect the new point to the vertices of the containing
     // triangle (or quadrilateral, if the new point fell on an
     // existing edge.)
 
-//    var base = makeEdge(); //Edge
     var base = new QuadEdge(this.edgeType).baseEdge();
     base.endPoints(e.org(), new Node(x.x(),x.y()));
     base.spliceWith(e);
@@ -500,6 +473,7 @@ Subdivision.prototype = {
         e=e.oPrev();
       }
       else if (e.oNext()==this.startingEdge) {// no more suspect edges
+        this._listEdges();
         return this;
       }
       else // pop a suspect edge
@@ -509,15 +483,27 @@ Subdivision.prototype = {
     } while(true);
   },
 
+ 	/*
+	 * draws the subdivision
+	 */
   draw: function() {
-    var edgesToDraw=[];
+  	if (this.edgeList)
+	    for (var i=0;i<this.edgeList.length;i++)
+    	  this.edgeList[i].draw();
+  },
+
+  /*
+   * Make a linear list of edges (e.g. for drawing)
+   */
+  _listEdges: function() {
+    this.edgeList=[];
     var addedEdges=[this.startingEdge];
     var e,n,d;
     this.startingEdge.added=true;
 
     while (addedEdges.length>0) {
       e=addedEdges.pop();
-      edgesToDraw.push(e);
+      this.edgeList.push(e);
       var neighbours=[e.sym(), e.oNext(), e.oPrev(), e.dNext(), e.dPrev()];
       for (var i=0; i<neighbours.length;i++) {
         n=neighbours[i];
@@ -527,33 +513,32 @@ Subdivision.prototype = {
         }
       }
     }
-    // draw all edges and reset flags.
-    for (var i=0;i<edgesToDraw.length;i++) {
-      d=edgesToDraw[i];
+    // reset flags.
+    for (var i=0;i<this.edgeList.length;i++) {
+      d=this.edgeList[i];
       d.added=false;
-      d.draw();
+    }
+  },
+
+  /*
+   * Returns an edge e, such that either x is on e, or e is an edge of
+   * a triangle containing x. The search starts from startingEdge and
+   * proceeds in the general direction of x. Based on the pseudocode
+   * in Guibas and Stolfi (1985) p.121.
+   *
+   * x : Node
+   */
+  _locate: function(x) {
+    var e = this.startingEdge; //Edge
+    while (true) {
+      if ((x.x()==e.org().x()&&x.y()==e.org().y()) || (x.x()==e.dest().x()&&x.y()==e.dest().y())) return e;
+      else if (x.isRightOf(e)) e=e.sym();
+      else if (!x.isRightOf(e.oNext())) e=e.oNext();
+      else if (!x.isRightOf(e.dPrev())) e=e.dPrev();
+      else return e;
     }
   }
+
 };
 
-/*################################################################################*/
 
-/*
- * creates a new quadEdge and return its base edge
- */
-//function makeEdge(edgeConstructor)
-//{
-//  var q = new QuadEdge(edgeConstructor);
-//  return q._edges[0]; // type Edge
-//}
-
-
-
-function print(text)
-{
-  if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
-  else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
-}
-
-
-//################################################################################
