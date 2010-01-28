@@ -16,7 +16,7 @@ CelticEdge.prototype.endPoints = function(n1,n2)
   this.angle1=Math.atan2(n2y - n1y, n2x - n1x);
   if (this.angle1 < 0) this.angle1+=TWO_PI;
   this.angle2=Math.atan2(n1y - n2y, n1x - n2x);
-  if (this.angle2 < 0) this.angle2+=TWO_PI;  
+  if (this.angle2 < 0) this.angle2+=TWO_PI;
 };
 
 CelticEdge.prototype.angle = function(n)
@@ -180,34 +180,50 @@ function EdgeDirection (edge,direction)
 
 
 // A Pattern is a set of closed curves that form a motif
-function Pattern(new_g, new_shape1, new_shape2) {
-  var splines = [];
-  var shape1=new_shape1;
-  var shape2=new_shape2;
-  var graph=new_g;
-  var ec=new EdgeCouple(new_g.edges.length);
+function Pattern(new_g, new_shape1, new_shape2)
+{
+  this.splines = [];
+  this.shape1=new_shape1;
+  this.shape2=new_shape2;
+  this.graph=new_g;
+  this.ec=new EdgeCouple(new_g.edgeList.length);
+  return this;
+}
 
-  this.getSplines = function() { return splines; };
+Pattern.prototype = {
 
-  this.toString = function() {
+  draw: function()
+  {
+    console.log(this.toString());
+  },
+
+  getSplines: function()
+  {
+    return splines;
+  },
+
+  toString: function()
+  {
     var result="Pattern: { splines: [";
-    for (var i=0;i<splines.length;i++) {
-      result+=splines[i];
+    for (var i=0;i<this.splines.length;i++) {
+      result+=this.splines[i]+", ";
     }
     return result+"]}";
-  };
+  },
 
-  this.edge_couple_set = function(edgeDirection, value)
+  edge_couple_set: function(edgeDirection, value)
   {
     for (var i=0;i<graph.edges.length;i++)
       if (graph.edges[i]==edgeDirection.getEdge()) {
         ec.getArray()[i][edgeDirection.getDirection()]=value;
         return;
       }
-  };
+  },
 
-  // Add a cubic Bezier curve segment to a spline (s)
-  this.addBezierCurve = function(s, node, edge1, edge2, direction)
+  /*
+   *  Add a cubic Bezier curve segment to a spline (s)
+   */
+  addBezierCurve: function(s, node, edge1, edge2, direction)
   {
     // Parameters:
     // - s: the spline to add the Bezier to
@@ -267,26 +283,26 @@ function Pattern(new_g, new_shape1, new_shape2) {
     }
 //    print("adding Bezier ("+x1+","+y1+" -- "+x2+","+y2+" -- "+x3+","+y3+" -- "+x4+","+y4+")");
     s.add_segment(x1,y1,x2,y2,x3,y3,x4,y4);
-  };
+  },
 
 
-  this.next_unfilled_couple = function()
+  next_unfilled_couple: function()
   {
     var ed=null; //EdgeDirection
-    for (var i=0;i<ec.getSize();i++) {
-      if (ec.getArray()[i][CLOCKWISE]==0) {
+    for (var i=0;i<this.ec.length;i++) {
+      if (ec[i][CLOCKWISE]==0) {
         ed = new EdgeDirection(graph.edges[i], CLOCKWISE);
         return ed;
       }
-      else if (ec.getArray()[i][ANTICLOCKWISE]==0) {
+      else if (ec[i][ANTICLOCKWISE]==0) {
         ed = new EdgeDirection(graph.edges[i], ANTICLOCKWISE);
         return ed;
       }
     }
     return ed; // possibly null if no edge found
-  };
+  },
 
-  this.make_curves = function()
+  makeCurves: function()
   {
     var i=0;
     var current_edge, first_edge, next_edge;
@@ -318,13 +334,11 @@ function Pattern(new_g, new_shape1, new_shape2) {
       } while (current_node!=first_node ||
                current_edge_direction.e!=first_edge_direction.e ||
                current_edge_direction.d!=first_edge_direction.d);
-//      print("2="+this.splines.length);
       if (s.getSegments().length>2) // spline is just one point: remove it
         splines.push(s);
-
-//      print("3="+this.splines.length);
     }
-  };
+    return this;
+  }
 };
 
 //================================================================================
@@ -552,7 +566,7 @@ function State()
 //  print("Graph: "+graph);
 
   pattern=new Pattern(this, graph, params.shape1, params.shape2);
-  pattern.make_curves();
+  pattern.makeCurves();
   t = 0.0;
 
 

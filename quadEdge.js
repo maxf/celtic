@@ -425,6 +425,11 @@ var Subdivision = function(a,b,c,edgeConstructor) {
 
 Subdivision.prototype = {
 
+  /*
+   * linear array of edges, for drawing or enumerating
+   */
+  edgeList: null,
+
   toString: function() {
     return "Subdivision: {edgeType: "+this.edgeType+"startingEdge: "+this.startingEdge+"}";
   },
@@ -487,9 +492,9 @@ Subdivision.prototype = {
 	 * draws the subdivision
 	 */
   draw: function() {
-  	if (this._edgeList) {
-	    for (var i=0;i<this._edgeList.length;i++) {
-    	  this._edgeList[i].draw();
+  	if (this.edgeList) {
+	    for (var i=0;i<this.edgeList.length;i++) {
+    	  this.edgeList[i].draw();
       }
     }
   },
@@ -499,8 +504,8 @@ Subdivision.prototype = {
    */
   _edgeListContains: function(e) {
     var c;
-    for (var j=this._edgeList.length-1; j>=0; j--) {
-      c = this._edgeList[j];
+    for (var j=this.edgeList.length-1; j>=0; j--) {
+      c = this.edgeList[j];
       if (e==c) {
         return true;
       }
@@ -512,7 +517,7 @@ Subdivision.prototype = {
    * Make a linear list of edges (e.g. for drawing)
    */
   _listEdges: function() {
-    this._edgeList=[];
+    this.edgeList=[];
     var addedEdges=[this.startingEdge];
     var e,n,d;
     this.startingEdge.added=true;
@@ -520,7 +525,7 @@ Subdivision.prototype = {
     while (addedEdges.length>0) {
       e=addedEdges.pop();
       if(!this._edgeListContains(e.sym())) {
-        this._edgeList.push(e);
+        this.edgeList.push(e);
       }
       var neighbours=[e.oNext(), e.oPrev(), e.dNext(), e.dPrev()];
       for (var i=neighbours.length-1; i>=0;i--) {
@@ -532,8 +537,8 @@ Subdivision.prototype = {
       }
     }
     // reset flags.
-    for (var i=this._edgeList.length-1;i>=0;i--) {
-      d=this._edgeList[i];
+    for (var i=this.edgeList.length-1;i>=0;i--) {
+      d=this.edgeList[i];
       d.added=false;
       d.sym().added=false;
     }

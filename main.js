@@ -1,37 +1,42 @@
 DelaunayCeltic = window.DelaunayCeltic || {};
 
+
+
 DelaunayCeltic.init = function()
 {
-  this.canvas = document.getElementById("canvas");
-  this.width = this.canvas.width;
-  this.height = this.canvas.height;
+  DelaunayCeltic.canvas = document.getElementById("canvas");
+  DelaunayCeltic.width = DelaunayCeltic.canvas.width;
+  DelaunayCeltic.height = DelaunayCeltic.canvas.height;
 
-  if (this.canvas) {
-    G2D.init(this.canvas.getContext("2d"), this.width, this.height);
-    G2D.clear(200,200,200);    
+  if (DelaunayCeltic.canvas) {
+    G2D.init(DelaunayCeltic.canvas.getContext("2d"), DelaunayCeltic.width, DelaunayCeltic.height);
+    G2D.clear(200,200,200);
     var scale=1;
     var offset=-10;
-    
-    var node1 = new Node(offset-this.width/scale,  offset+this.height/scale+1);
-    var node2 = new Node(offset+this.width/(2*scale), offset-this.height/(2*scale));
-    var node3 = new Node(offset+2*this.width/scale, offset+this.height/scale+1);
-    
-    this.subdivision = new Subdivision(node1,node2,node3, CelticEdge);
+
+    var node1 = new Node(offset-DelaunayCeltic.width/scale,  offset+DelaunayCeltic.height/scale+1);
+    var node2 = new Node(offset+DelaunayCeltic.width/(2*scale), offset-DelaunayCeltic.height/(2*scale));
+    var node3 = new Node(offset+2*DelaunayCeltic.width/scale, offset+DelaunayCeltic.height/scale+1);
+
+    DelaunayCeltic.subdivision = new Subdivision(node1,node2,node3, CelticEdge);
+
+    // simulate a click, for testing
+    DelaunayCeltic.clicked({clientX: 300, clientY: 200});
   }
 };
 
 DelaunayCeltic.clicked = function(event)
 {
-  event._x = event.clientX - this.canvas.offsetLeft;
-  event._y = event.clientY - this.canvas.offsetTop;
+  event._x = event.clientX - DelaunayCeltic.canvas.offsetLeft;
+  event._y = event.clientY - DelaunayCeltic.canvas.offsetTop;
 
   G2D.clear(200,200,200);
-  this.subdivision.insertSite(new Node(event._x, event._y))
+  DelaunayCeltic.subdivision.insertSite(new Node(event._x, event._y))
                    .draw();
 
-//  this.pattern = new Pattern(this.subdivision, 1.0, 1.0);
-//  this.pattern.draw();
-
+  DelaunayCeltic.pattern = new Pattern(DelaunayCeltic.subdivision, 1.0, 1.0)
+    .makeCurves()
+    .draw();
 };
 
 window.addEventListener("load", DelaunayCeltic.init, false);
