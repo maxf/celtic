@@ -1,5 +1,7 @@
 function CelticEdge() {
   Edge.call(this);
+  this.leftCurveIsComputed = false; // The curve starting from the left side of this edge hasn't been computed yet
+  this.rightCurveIsComputed = false;  // The curve starting from the right side of this edge hasn't been computed yet
 };
 
 // Prototype chain for inheritance
@@ -133,21 +135,13 @@ function line(x1,y1, x2,y2)
 }
 
 
-//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function EdgeCouple(nb_edges)
-{
-  this.size = nb_edges;
-  this.array = new Array(this.size);
-  for (var i=0;i<this.size;i++) {
-    this.array[i] = new Array(2);
-    this.array[i][CLOCKWISE] = 0;
-    this.array[i][ANTICLOCKWISE] = 0;
-  }
-}
-
 //======================================================================
 
+/*
+ * cladd EdgeDirection
+ * an (Edge, int) pair, representing an Edge and a rotation direction: CLOCKWISE (0) or ANTICLOCKWISE (non-0)
+ * A pair characterises the start of a Bezier curve, starting from the middle of the Edge and going off in the CW or ACW direction.
+ */
 function EdgeDirection (edge,direction)
 {
   var e=edge; // Edge
@@ -168,9 +162,7 @@ function EdgeDirection (edge,direction)
 
 
 
-//====================================================================================
-
-
+//======================================================================
 
 /* Class Pattern
  * A set of closed curves that form a motif
@@ -185,7 +177,6 @@ function Pattern(subdivision, shape1, shape2)
   this.shape1=shape1;
   this.shape2=shape2;
   this.graph=subdivision;
-  this.ec=new EdgeCouple(subdivision.edgeList.length);
   return this;
 }
 
@@ -210,14 +201,6 @@ Pattern.prototype = {
     return result+"]}";
   },
 
-  edge_couple_set: function(edgeDirection, value)
-  {
-    for (var i=0;i<this.graph.edgeList.length;i++)
-      if (this.graph.edgeList[i]==edgeDirection.getEdge()) {
-        this.ec.array[i][edgeDirection.getDirection()]=value;
-        return;
-      }
-  },
 
   /*
    *  Add a cubic Bezier curve segment to a spline (s)
@@ -320,7 +303,12 @@ Pattern.prototype = {
       current_node=first_node=current_edge_direction.getEdge().org();
 
       do {
-        this.edge_couple_set(current_edge_direction, 1);
+        if (current_edge_direction.getDirection()==ANTICLOCKWISE) {
+          current_edge_direction.getEdge().leftCurveIsComputed = true;
+        } else {
+          current_edge_direction.getEdge().rightCurveIsComputed = true;
+        }
+
         next_edge = this.graph.next_edge_around(current_node,current_edge_direction);
 
         // add the spline segment to the spline
