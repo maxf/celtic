@@ -268,20 +268,17 @@ Pattern.prototype = {
   },
 
 
+  /*
+   * Find a curve that hasn't been computed yet: go through each edge and check if its left and right curves have been done yet.
+   */
   next_unfilled_couple: function()
   {
-    var ed=null; //EdgeDirection
-    for (var i=0;i<this.ec.size;i++) {
-      if (this.ec.array[i][CLOCKWISE]==0) {
-        ed = new EdgeDirection(this.graph.edgeList[i], CLOCKWISE);
-        return ed;
-      }
-      else if (this.ec.array[i][ANTICLOCKWISE]==0) {
-        ed = new EdgeDirection(this.graph.edgeList[i], ANTICLOCKWISE);
-        return ed;
-      }
+    var edges = this.graph.edgeList;
+    for (var i=edges.length-1; i>=0; i--) {
+      if (!edges[i].leftCurveIsComputed) return new EdgeDirection(edges[i],ANTICLOCKWISE);
+      if (!edges[i].rightCurveIsComputed) return new EdgeDirection(edges[i],CLOCKWISE);
     }
-    return ed; // possibly null if no edge found
+    return null; // all the curves have been comnputed.
   },
 
   makeCurves: function()
