@@ -500,6 +500,27 @@ Subdivision.prototype = {
   },
 
   /*
+   * returns the edge that is next after 'edge' around node 'e', in direction 'd' (clockwise, or anticlockwise)
+   */
+  nextEdgeAround: function(node, edge, direction)
+  {
+    if(node==edge.org()) {
+      if (direction==CLOCKWISE) {
+        return (this._edgeListContains(edge.oPrev())) ? edge.oPrev() : edge.oPrev().sym();
+      } else {
+        return (this._edgeListContains(edge.oNext())) ? edge.oNext() : edge.oNext().sym();
+      }
+    } else {
+      if (direction==CLOCKWISE) {
+        return (this._edgeListContains(edge.dPrev())) ? edge.dPrev() : edge.dPrev().sym();
+      } else {
+        return (this._edgeListContains(edge.dNext())) ? edge.dNext() : edge.dNext().sym();
+      }
+    }
+  },
+
+
+  /*
    * check if the edge list contains the passed edge. Returns boolean
    */
   _edgeListContains: function(e) {

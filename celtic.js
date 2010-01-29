@@ -137,33 +137,6 @@ function line(x1,y1, x2,y2)
 
 //======================================================================
 
-/*
- * cladd EdgeDirection
- * an (Edge, int) pair, representing an Edge and a rotation direction: CLOCKWISE (0) or ANTICLOCKWISE (non-0)
- * A pair characterises the start of a Bezier curve, starting from the middle of the Edge and going off in the CW or ACW direction.
- */
-function EdgeDirection (edge,direction)
-{
-  var e=edge; // Edge
-  var d=direction; // int
-
-  this.getEdge = function() { return e; };
-  this.setEdge = function(edge) { e = edge; };
-  this.getDirection = function() { return d; };
-  this.setDirection = function(direction) { d = direction; };
-  this.toString = function() { return "EdgeDirection {e: "+e+", d:"+(direction===0?"CLOCKWISE":"ANTICLOCKWISE")+"}"; };
-}
-
-
-//======================================================================
-
-
-
-
-
-
-//======================================================================
-
 /* Class Pattern
  * A set of closed curves that form a motif
  *
@@ -226,24 +199,24 @@ Pattern.prototype = {
 
 //    print("addBezierCurve(s :"+s+", node: "+node+", edge1: "+edge1+", edge2: "+edge2+", direction: "+direction);
 
-    var x1=(edge1.getNode1().getX()+edge1.getNode2().getX())/2.0;
-    var y1=(edge1.getNode1().getY()+edge1.getNode2().getY())/2.0;
+    var x1=(edge1.org().x()+edge1.dest().x())/2.0;
+    var y1=(edge1.org().y()+edge1.dest().y())/2.0;
 
-    var x4=(edge2.getNode1().getX()+edge2.getNode2().getX())/2.0;
-    var y4=(edge2.getNode1().getY()+edge2.getNode2().getY())/2.0;
+    var x4=(edge2.org().x()+edge2.dest().x())/2.0;
+    var y4=(edge2.org().y()+edge2.dest().y())/2.0;
 
-    var alpha=edge1.angle_to(edge2,node,direction)*shape1;
-    var beta=shape2;
+    var alpha=edge1.angle_to(edge2,node,direction)*this.shape1;
+    var beta=this.shape2;
 
     var i1x,i1y,i2x,i2y,x2,y2,x3,y3;
 
     switch(direction) {
     case ANTICLOCKWISE:
       // (i1x,i2x) must stick out to the left of NP1 and I2 to the right of NP4
-      i1x =  alpha*(node.getY()-y1)+x1;
-      i1y = -alpha*(node.getX()-x1)+y1;
-      i2x = -alpha*(node.getY()-y4)+x4;
-      i2y =  alpha*(node.getX()-x4)+y4;
+      i1x =  alpha*(node.y()-y1)+x1;
+      i1y = -alpha*(node.x()-x1)+y1;
+      i2x = -alpha*(node.y()-y4)+x4;
+      i2y =  alpha*(node.x()-x4)+y4;
       x2 =  beta*(y1-i1y) + i1x;
       y2 = -beta*(x1-i1x) + i1y;
       x3 = -beta*(y4-i2y) + i2x;
@@ -251,10 +224,10 @@ Pattern.prototype = {
       break;
     case CLOCKWISE:
       // I1 must stick out to the left of NP1 and I2 to the right of NP4
-      i1x = -alpha*(node.getY()-y1)+x1;
-      i1y =  alpha*(node.getX()-x1)+y1;
-      i2x =  alpha*(node.getY()-y4)+x4;
-      i2y = -alpha*(node.getX()-x4)+y4;
+      i1x = -alpha*(node.y()-y1)+x1;
+      i1y =  alpha*(node.x()-x1)+y1;
+      i2x =  alpha*(node.y()-y4)+x4;
+      i2y = -alpha*(node.x()-x4)+y4;
       x2 = -beta*(y1-i1y) + i1x;
       y2 =  beta*(x1-i1x) + i1y;
       x3 =  beta*(y4-i2y) + i2x;
@@ -270,13 +243,14 @@ Pattern.prototype = {
 
   /*
    * Find a curve that hasn't been computed yet: go through each edge and check if its left and right curves have been done yet.
+   * returns an object {edge: Edge, direction: int}
    */
-  next_unfilled_couple: function()
+  nextCurveToCompute: function()
   {
     var edges = this.graph.edgeList;
     for (var i=edges.length-1; i>=0; i--) {
-      if (!edges[i].leftCurveIsComputed) return new EdgeDirection(edges[i],ANTICLOCKWISE);
-      if (!edges[i].rightCurveIsComputed) return new EdgeDirection(edges[i],CLOCKWISE);
+      if (!edges[i].leftCurveIsComputed) return {edge: edges[i], direction: ANTICLOCKWISE};
+      if (!edges[i].rightCurveIsComputed) return {edge: edges[i], direction: CLOCKWISE};
     }
     return null; // all the curves have been comnputed.
   },
@@ -288,39 +262,51 @@ Pattern.prototype = {
     var current_node, first_node;
     var current_direction, first_direction;
     var s; //Spline
-    var first_edge_direction, current_edge_direction;
+    var firstCurveOrigin;
 
-    while ((first_edge_direction=this.next_unfilled_couple())!=null) {
+    while ((firstCurveOrigin=this.nextCurveToCompute())!=null) {
+      first_edge = firstCurveOrigin.edge;
+      first_direction = firstCurveOrigin.direction;
 
       // start a new loop
       s=new Spline(randomInt(100,255), randomInt(100,255), randomInt(100,255));
 
-      current_edge_direction = new EdgeDirection(first_edge_direction.getEdge(),
-                                                 first_edge_direction.getDirection());
-      current_node=first_node=current_edge_direction.getEdge().org();
+      current_edge = first_edge;
+      current_direction = first_direction;
+      current_node=first_node=current_edge.org();
 
       do {
-        if (current_edge_direction.getDirection()==ANTICLOCKWISE) {
-          current_edge_direction.getEdge().leftCurveIsComputed = true;
+
+        // add a new segment (cubic Bezier) to the loop
+        // a segment is defined by current_node, current_edge, next_edge, current_direction
+        //                     ^         _____segment_____
+        //  current_direction  |        /                 \
+        //                     |       /                   \
+        //                +----current_edge------+-----------next_edge--------+
+        //                                    current_node
+
+
+        if (current_direction == ANTICLOCKWISE) {
+          current_edge.leftCurveIsComputed = true;
         } else {
-          current_edge_direction.getEdge().rightCurveIsComputed = true;
+          current_edge.rightCurveIsComputed = true;
         }
 
-        next_edge = this.graph.next_edge_around(current_node,current_edge_direction);
+        next_edge = this.graph.nextEdgeAround(current_node,current_edge,current_direction);
 
         // add the spline segment to the spline
-        this.addBezierCurve(s,current_node, current_edge_direction.getEdge(), next_edge, current_edge_direction.getDirection());
+        this.addBezierCurve(s,current_node, current_edge, next_edge, current_direction);
 
         // cross the edge
-        current_edge_direction.setEdge(next_edge);
+        current_edge = next_edge;
         current_node = next_edge.other_node(current_node);
-        current_edge_direction.setDirection(1-current_edge_direction.getDirection());
+        current_direction = 1-current_direction;
 
       } while (current_node!=first_node ||
-               current_edge_direction.e!=first_edge_direction.e ||
-               current_edge_direction.d!=first_edge_direction.d);
+               current_edge != first_edge ||
+               current_direction != first_direction); // until we're back at the start
       if (s.getSegments().length>2) // spline is just one point: remove it
-        splines.push(s);
+        this.splines.push(s);
     }
     return this;
   }
@@ -333,8 +319,8 @@ function Point(new_x, new_y)
   var x=new_x, y=new_y;
 
   //Accessors
-  this.getX = function() { return x; };
-  this.getY = function() { return y; };
+  this.x = function() { return x; };
+  this.y = function() { return y; };
 
   this.toString = function() { return "Point: {x="+x+", y="+y+"}";};
 }
@@ -389,8 +375,8 @@ function Spline(new_red,new_green,new_blue) {
     tt = t*segments.length - si;
     ss=segments[si];
 //    print("ss: "+ss);
-    var pi=new PointIndex(ss.getX1()*(1-tt)*(1-tt)*(1-tt)+3*ss.getX2()*tt*(1-tt)*(1-tt)+3*ss.getX3()*tt*tt*(1-tt)+ss.getX4()*tt*tt*tt,
-                          ss.getY1()*(1-tt)*(1-tt)*(1-tt)+3*ss.getY2()*tt*(1-tt)*(1-tt)+3*ss.getY3()*tt*tt*(1-tt)+ss.getY4()*tt*tt*tt,
+    var pi=new PointIndex(ss.x1()*(1-tt)*(1-tt)*(1-tt)+3*ss.x2()*tt*(1-tt)*(1-tt)+3*ss.x3()*tt*tt*(1-tt)+ss.x4()*tt*tt*tt,
+                          ss.y1()*(1-tt)*(1-tt)*(1-tt)+3*ss.y2()*tt*(1-tt)*(1-tt)+3*ss.y3()*tt*tt*(1-tt)+ss.y4()*tt*tt*tt,
                           si);
 //    print(pi);
     return pi;
@@ -419,14 +405,14 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
   x4=new_x4; y4=new_y4;
 
   // Accessors
-  this.getX1 = function() { return x1; };
-  this.getY1 = function() { return y1; };
-  this.getX2 = function() { return x2; };
-  this.getY2 = function() { return y2; };
-  this.getX3 = function() { return x3; };
-  this.getY3 = function() { return y3; };
-  this.getX4 = function() { return x4; };
-  this.getY4 = function() { return y4; };
+  this.x1 = function() { return x1; };
+  this.y1 = function() { return y1; };
+  this.x2 = function() { return x2; };
+  this.y2 = function() { return y2; };
+  this.x3 = function() { return x3; };
+  this.y3 = function() { return y3; };
+  this.x4 = function() { return x4; };
+  this.y4 = function() { return y4; };
 
 
   this.draw = function() {
@@ -618,7 +604,7 @@ function draw() {
           pi1=s.value_at(t);
           pi2=s.value_at(t2);
           var p1=pi1.getPoint(), p2=pi2.getPoint();
-          line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
+          line(p1.x(),p1.y(), p2.x(),p2.y());
         }
       }
       t=t2;
