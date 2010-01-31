@@ -24,7 +24,11 @@ CelticEdge.prototype.endPoints = function(n1,n2)
 CelticEdge.prototype.angle = function(n)
 {
   // return the angle of the edge at Node n
-  if (n==this.org()) return this.angle1; else return this.angle2;
+  if (n===this._origin) {
+    return this.angle1;
+  } else {
+    return this.angle2;
+  }
 };
 
 CelticEdge.prototype.other_node = function(n)
@@ -37,6 +41,8 @@ CelticEdge.prototype.angle_to = function(e2, node, direction)
   /* returns the absolute angle from this edge to "edge2" around
    "node" following "direction" */
   var a;
+
+  TODO: angle1 and angle2 isn't defined for all edges
 
   if (direction===CLOCKWISE)
     a=this.angle(node) - e2.angle(node);
@@ -174,6 +180,13 @@ Pattern.prototype = {
     return result+"]}";
   },
 
+  draw: function()
+  {
+    for (var i=0;i<this.splines.length;i++) {
+      this.splines[i].draw();
+    }
+  },
+
 
   /*
    *  Add a cubic Bezier curve segment to a spline (s)
@@ -305,7 +318,7 @@ Pattern.prototype = {
       } while (current_node!=first_node ||
                current_edge != first_edge ||
                current_direction != first_direction); // until we're back at the start
-      if (s.getSegments().length>2) // spline is just one point: remove it
+      if (s.segments().length>2) // spline is just one point: remove it
         this.splines.push(s);
     }
     return this;
@@ -341,39 +354,41 @@ function PointIndex(new_x,new_y,new_i) {
 
 //================================================================================
 
-function Spline(new_red,new_green,new_blue) {
-  var segments = [];
-  var _red=new_red;
-  var _green=new_green;
-  var _blue=new_blue;
+/*
+ * A spline of bezier segments
+ */
+function Spline(red,green,blue) {
+  this._segments = [];
+  this._red=red;
+  this._green=green;
+  this._blue=blue;
 
 //    var cssColorString="rgb("+red+","+green+","+blue+")";
 //    print("new Spline: "+cssColorString)
 //    g_ctx.strokeStyle=cssColorString;
 
   // accessors
-  this.getSegments = function() { return segments; };
-  this.getRed = function() { return _red; };
-  this.getGreen = function() { return _green; };
-  this.getBlue = function() { return _blue; };
+  this.segments = function() { return this._segments; };
+  this.red = function() { return this._red; };
+  this.green = function() { return this._green; };
+  this.blue = function() { return this._blue; };
 
   this.add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
   {
     var bezier = new CubicBezierCurve(x1,y1,x2,y2,x3,y3,x4,y4);
 //    print("adding: "+bezier);
-    segments.push(bezier);
+    this._segments.push(bezier);
   };
 
   this.value_at = function(t)
   {
-    var si;
+    var si = Math.floor(t*this._segments.length);
     var tt;
     var ss;
-    si = Math.floor(t*segments.length);
-    if (si==segments.length) si--;
+    if (si==this._segments.length) si--;
 //    print("out: "+si+", "+segments.length+", "+t+"\n");
-    tt = t*segments.length - si;
-    ss=segments[si];
+    tt = t*this._segments.length - si;
+    ss=this._segments[si];
 //    print("ss: "+ss);
     var pi=new PointIndex(ss.x1()*(1-tt)*(1-tt)*(1-tt)+3*ss.x2()*tt*(1-tt)*(1-tt)+3*ss.x3()*tt*tt*(1-tt)+ss.x4()*tt*tt*tt,
                           ss.y1()*(1-tt)*(1-tt)*(1-tt)+3*ss.y2()*tt*(1-tt)*(1-tt)+3*ss.y3()*tt*tt*(1-tt)+ss.y4()*tt*tt*tt,
@@ -383,51 +398,54 @@ function Spline(new_red,new_green,new_blue) {
   };
 
   this.draw = function() {
-    for (var i=0;i<segments.length;i++) {
-      var s=segments[i];
+    for (var i=0;i<this._segments.length;i++) {
+      var s=this._segments[i];
       s.draw();
     }
   };
 
   this.toString = function() {
-    return "Spline: { "+segments.length+" segments }";
+    return "Spline: { "+this._segments.length+" segments }";
   };
 };
 
 //================================================================================
 
-function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, new_y4) {
-  // A Bezier spline segment: with 4 control points
-  var x1,y1,x2,y2,x3,y3,x4,y4;
-  x1=new_x1; y1=new_y1;
-  x2=new_x2; y2=new_y2;
-  x3=new_x3; y3=new_y3;
-  x4=new_x4; y4=new_y4;
+/*
+ * A Bezier spline segment: with 4 control points
+ */
+function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4, new_y4)
+{
+  this._x1=new_x1; this._y1=new_y1;
+  this._x2=new_x2; this._y2=new_y2;
+  this._x3=new_x3; this._y3=new_y3;
+  this._x4=new_x4; this._y4=new_y4;
 
   // Accessors
-  this.x1 = function() { return x1; };
-  this.y1 = function() { return y1; };
-  this.x2 = function() { return x2; };
-  this.y2 = function() { return y2; };
-  this.x3 = function() { return x3; };
-  this.y3 = function() { return y3; };
-  this.x4 = function() { return x4; };
-  this.y4 = function() { return y4; };
+  this.x1 = function() { return this._x1; };
+  this.y1 = function() { return this._y1; };
+  this.x2 = function() { return this._x2; };
+  this.y2 = function() { return this._y2; };
+  this.x3 = function() { return this._x3; };
+  this.y3 = function() { return this._y3; };
+  this.x4 = function() { return this._x4; };
+  this.y4 = function() { return this._y4; };
 
 
   this.draw = function() {
-    circle(x1, y1, 2.0);
-    circle(x2, y2, 2.0);
-    circle(x3, y3, 2.0);
-    circle(x4, y4, 2.0);
-    line(x1,y1, x2,y2);
-    line(x2,y2, x3,y3);
-    line(x3,y3, x4,y4);
+    G2D.circle(this._x1, this._y1, 2.0);
+    G2D.circle(this._x2, this._y2, 2.0);
+    G2D.circle(this._x3, this._y3, 2.0);
+    G2D.circle(this._x4, this._y4, 2.0);
+    G2D.line(this._x1,this._y1, this._x2,this._y2);
+    G2D.line(this._x2,this._y2, this._x3,this._y3);
+    G2D.line(this._x3,this._y3, this._x4,this._y4);
+
+    console.log(this)
   };
 
   this.toString = function() {
-    return "CubicBezierCurve { "+x1+","+y1+" = "+x2+","+y2+" = "+x3+","+y3+" = "+x4+","+y4+"}";
-
+    return "CubicBezierCurve { "+this._x1+","+this._y1+" = "+this._x2+","+this._y2+" = "+this._x3+","+this._y3+" = "+this._x4+","+this._y4+"}";
   };
 }
 
@@ -600,7 +618,7 @@ function draw() {
         s=splines[i];
 
         if (s != null) { // skip if one-point spline
-          g_ctx.strokeStyle="rgb("+s.getRed()+","+s.getGreen()+","+s.getBlue()+")";
+          g_ctx.strokeStyle="rgb("+s.red()+","+s.green()+","+s.blue()+")";
           pi1=s.value_at(t);
           pi2=s.value_at(t2);
           var p1=pi1.getPoint(), p2=pi2.getPoint();
