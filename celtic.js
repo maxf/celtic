@@ -42,7 +42,7 @@ CelticEdge.prototype.angle_to = function(e2, node, direction)
    "node" following "direction" */
   var a;
 
-  TODO: angle1 and angle2 isn't defined for all edges
+//  TODO: angle1 and angle2 isn't defined for all edges
 
   if (direction===CLOCKWISE)
     a=this.angle(node) - e2.angle(node);
@@ -218,7 +218,8 @@ Pattern.prototype = {
     var x4=(edge2.org().x()+edge2.dest().x())/2.0;
     var y4=(edge2.org().y()+edge2.dest().y())/2.0;
 
-    var alpha=edge1.angle_to(edge2,node,direction)*this.shape1;
+//    var alpha=edge1.angle_to(edge2,node,direction)*this.shape1;
+    var alpha=this.shape1;
     var beta=this.shape2;
 
     var i1x,i1y,i2x,i2y,x2,y2,x3,y3;
