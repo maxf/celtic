@@ -131,7 +131,7 @@ Node.prototype = {
 
 function Edge() {
   this._num=0; // number of this edge in the QuadEdge that contains it
-  this._data = null; // the edge's origin (Node)
+  this._origin = null; // the edge's origin (Node)
   this._next = null; // the edge's next counterclockwise edge (from) around the origin of this edge (Edge)
   this._quad = null; // the QuadEdge that this edge is the base edge of
 
@@ -227,7 +227,7 @@ Edge.prototype = {
    */
   org: function()
   {
-    return this._data;
+    return this._origin;
   },
 
   /*
@@ -244,8 +244,8 @@ Edge.prototype = {
    */
   endPoints: function(origin,destination)
   {
-    this._data = origin;
-    this.sym()._data = destination;
+    this._origin = origin;
+    this.sym()._origin = destination;
   },
 
   /*
@@ -330,7 +330,7 @@ Edge.prototype = {
   draw: function()
   {
     G2D.line(this.org().x(),this.org().y(),this.dest().x(),this.dest().y());
-//    this.org().draw();
+    this.org().draw();
     this.dest().draw();
   },
 
@@ -392,7 +392,6 @@ var Subdivision = function(a,b,c,edgeConstructor) {
   // a,b,c are the Nodes of the original triangle
 
   this.edgeType = edgeConstructor;
-  this.drawableEdges = []; // an linear array of edges for easy drawing
 
   // Attributes:
   //  startingEdge: the first Edge of this subdivision, from a to b
@@ -418,8 +417,7 @@ var Subdivision = function(a,b,c,edgeConstructor) {
   ec.sym().spliceWith(ea);
   this.startingEdge = ea;
 
-  this.drawableEdges.push(ea, eb, ec);
-
+  this._listEdges();
 
 };
 
