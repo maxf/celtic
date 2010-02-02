@@ -52,35 +52,6 @@ CelticEdge.prototype.angle_to = function(e2, node, direction)
   if (a<0) return a+2*PI; else return a;
 };
 
-//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function Params()
-{
-  var step=0.01; // parameter increment for progressive rendering
-  var delay;        /* controls curve drawing speed (step delay in microsecs) */
-
-  var curve_width; //float
-  var shape1, shape2; //float
-  var margin; //float
-  var type; // int. one of Graph.TYPE_*
-  var edge_size;
-  var cluster_size; /* only used if type is kennicott */
-  var nsteps; /* only if triangle: number of subdivisions along the side */
-  var nb_orbits;          /* only used if type is polar */
-  var nb_nodes_per_orbit; /* only used if type is polar */
-  var angle; /* angle of rotation of the graph around the centre */
-  var shadow_offset;
-
-  this.getShape1 = function() { return shape1; };
-  this.getShape2 = function() { return shape2; };
-  this.getStep = function() { return step; };
-  this.getDelay = function() { return delay; };
-  this.getAngle = function() { return angle; };
-  this.setAngle = function(newAngle) { angle=newAngle; };
-  this.getShadowOffset = function() { return getShadowOffset; };
-  this.setShadowOffset = function(newOffset) { shadow_offset=newOffset; };
-};
-
 //================================================================================
 
 const CLOCKWISE=0;
@@ -163,7 +134,7 @@ Pattern.prototype = {
 
   draw: function()
   {
-    console.log(this.toString());
+    print(this.toString());
   },
 
   getSplines: function()
@@ -442,137 +413,13 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
     G2D.line(this._x2,this._y2, this._x3,this._y3);
     G2D.line(this._x3,this._y3, this._x4,this._y4);
 
-    console.log(this)
+    print(this);
   };
 
   this.toString = function() {
     return "CubicBezierCurve { "+this._x1+","+this._y1+" = "+this._x2+","+this._y2+" = "+this._x3+","+this._y3+" = "+this._x4+","+this._y4+"}";
   };
 }
-
-//================================================================================
-
-function State()
-{
-  var showGraph; //Boolean
-  var pattern;
-  var graph;
-  var width, height;
-  var delay2;
-  var reset;
-  var t;
-  var graphRotationAngle = randomFloat(0,2*PI);
-
-  var params = new Params();
-
-  this.getStep = function() { return step; };
-  this.getPattern = function() { return pattern; };
-  this.getGraph = function() { return graph; };
-  this.getParams = function() { return params; };
-  this.getGraphRotationAngle = function() { return graphRotationAngle; };
-
-  // Constructor
-  params.curve_width=randomFloat(4,10);
-
-  //  params.shape1=randomFloat(.5,2);
-  //  params.shape2=randomFloat(.5,2);
-  params.shape1=.5;
-  params.shape2=.5;
-  params.edge_size=randomFloat(20,60);
-  params.delay=0;
-  params.margin=randomFloat(0,100);
-
-//  params.type=randomInt(0,4);
-  params.type=Graph.TYPE_CUSTOM;
-
-  switch (params.type) {
-    case Graph.TYPE_POLAR:
-      params.type=Graph.TYPE_POLAR;
-      params.nb_orbits=randomInt(2,11);
-      params.nb_nodes_per_orbit=randomInt(4,13);
-      graph=new Graph(Graph.TYPE_POLAR,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.nb_nodes_per_orbit,
-                         params.nb_orbits);
-      break;
-    case Graph.TYPE_TGRID:
-      params.type=Graph.TYPE_TGRID;
-      params.shape1=-randomFloat(0.3, 1.2);
-      params.shape2=-randomFloat(0.3, 1.2);
-      params.edge_size=randomFloat(50,90);
-      graph=new Graph(params.type,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.edge_size,
-                         0);
-      break;
-    case Graph.TYPE_KENNICOTT:
-      params.type=Graph.TYPE_KENNICOTT;
-      params.shape1=randomFloat(-1,1);
-      params.shape2=randomFloat(-1,1);
-      params.edge_size=randomFloat(70,90);
-      params.cluster_size=params.edge_size/randomFloat(3,12)-1;
-      graph=new Graph(params.type,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.edge_size,
-                         params.cluster_size);
-      break;
-    case Graph.TYPE_TRIANGLE:
-      params.type=Graph.TYPE_TRIANGLE;
-      params.edge_size=randomFloat(60,100);
-      params.margin=randomFloat(-900,0);
-      graph=new Graph (Graph.TYPE_TRIANGLE,
-                          params.margin,
-                          params.margin,
-                          WIDTH-2*params.margin,
-                          HEIGHT-2*params.margin,
-                          params.edge_size,
-                          0);
-      break;
-    case Graph.TYPE_CUSTOM:
-      params.type=Graph.TYPE_CUSTOM;
-      params.nb_orbits=randomInt(2,11);
-      params.nb_nodes_per_orbit=randomInt(4,13);
-      graph=new Graph(Graph.TYPE_CUSTOM,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.nb_nodes_per_orbit,
-                         params.nb_orbits);
-      break;
-    default: print("error: graph type out of bounds: "+params.type);
-    }
-
-//  graph.rotate(graphRotationAngle,WIDTH/2,HEIGHT/2);
-//  print("Graph: "+graph);
-
-  pattern=new Pattern(this, graph, params.shape1, params.shape2);
-  pattern.makeCurves();
-  t = 0.0;
-
-
-  //  if (pattern.splines.length==1) {
-    colorMode(HSB);
-    start=color(randomInt(0,256), 200, 200);
-    end=color(randomInt(0,256), 200, 200);
-    //  }
-  strokeWeight(params.curve_width);
-  //  stroke(0,0,0);
-  //graph.draw();
-  //  print(graph);
-
-};
-
-
 
 //===========================================================================
 
@@ -587,64 +434,9 @@ function circle(cx,cy,radius)
 
 //===========================================================================
 
-var st;
-var s;
-var t,t2;
-var pi1, pi2, pi3, pi4;
-var start, end; // colors
-
-function setup()
-{
-  st=new State();
-//  g_ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
-//  g_ctx.fillRect(0,0,WIDTH,WIDTH);
-  st.getGraph().draw();
-}
-
-function draw() {
-  var c; //color
-  var step = st.getParams().getStep();
-  var delay = st.getParams().getDelay();
-  var splines = st.getPattern().getSplines();
-  var intervalId;
-
-  t=0;
-  intervalId = setInterval(drawOneStep,delay);
-
-  function drawOneStep() {
-    if(t>=1.0) {clearInterval(intervalId);}
-    else {
-      t2 = (t+step>1.0) ? 1.0 : t+step;
-      for (var i=0;i<splines.length;i++) {
-        s=splines[i];
-
-        if (s != null) { // skip if one-point spline
-          g_ctx.strokeStyle="rgb("+s.red()+","+s.green()+","+s.blue()+")";
-          pi1=s.value_at(t);
-          pi2=s.value_at(t2);
-          var p1=pi1.getPoint(), p2=pi2.getPoint();
-          line(p1.x(),p1.y(), p2.x(),p2.y());
-        }
-      }
-      t=t2;
-    }
-  }
-}
-
 function print(text)
 {
   if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
   else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
 }
 
-
-function main()
-{
-  setup();
-  draw();
-}
-
-   /*
-g_canvas.addEventListener('click',main,false);
-main();
-*/
