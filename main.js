@@ -6,7 +6,7 @@ init: function()
   DelaunayCeltic.width = DelaunayCeltic.canvas.width;
   DelaunayCeltic.height = DelaunayCeltic.canvas.height;
 
-  DelaunayCeltic.param1 = .8;
+  DelaunayCeltic.param1 = .4;
   DelaunayCeltic.param2 = .4;
 
   if (DelaunayCeltic.canvas) {
@@ -21,7 +21,7 @@ init: function()
 
     var node1 = new Node(100,100);
     var node2 = new Node(500,100);
-    var node3 = new Node(250,500);
+    var node3 = new Node(300,440);
 
     DelaunayCeltic.subdivision = new Subdivision(node1,node2,node3, CelticEdge);
 
