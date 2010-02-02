@@ -24,61 +24,6 @@ CelticEdge.prototype.other_node = function(n)
 
 const CLOCKWISE=0;
 const ANTICLOCKWISE=1;
-const SQRT_3 = 1.73205080756887729352;
-const PI = Math.PI;
-const TWO_PI = 2*PI;
-
-//================================================================================
-
-const RGB = 0;
-const HSB = 1;
-var _colorMode = RGB; // one of RGB or HSB
-var r = 0;
-var g = 0;
-var b = 0;
-
-// return a number in [min, max[
-// <http://processing.org/reference/random_.html>
-function randomFloat(min,max)
-{
-  return Math.random()*(max-min) + min;
-};
-
-function randomInt(min,max)
-{
-  return Math.floor(Math.random()*(max-min) + min) | 0;
-};
-
-function colorMode(mode)
-{
-  _colorMode=mode;
-};
-
-function color(a,b,c)
-{
-  switch(this._colorMode) {
-    case this.RGB: this.r=a; this.g=b; this.b=c; break;
-  }
-};
-
-// <http://processing.org/reference/strokeWeight_.html>
-function strokeWeight(weight)
-{
-  g_ctx.lineWidth = weight;
-};
-
-// <http://processing.org/reference/line_.html>
-function line(x1,y1, x2,y2)
-{
-//  g_ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
-//  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
-  g_ctx.beginPath();
-  g_ctx.moveTo(x1,y1);
-  g_ctx.lineTo(x2,y2);
-  g_ctx.closePath();
-  g_ctx.stroke();
-}
-
 
 //======================================================================
 
