@@ -12,23 +12,6 @@ CelticEdge.superclass = Edge.prototype;
 CelticEdge.prototype.endPoints = function(n1,n2)
 {
   CelticEdge.superclass.endPoints.call(this,n1,n2);
-
-  var n2x=this.dest().x(), n2y=this.dest().y();
-  var n1x=this.org().x(), n1y=this.org().y();
-  this.angle1=Math.atan2(n2y - n1y, n2x - n1x);
-  if (this.angle1 < 0) this.angle1+=TWO_PI;
-  this.angle2=Math.atan2(n1y - n2y, n1x - n2x);
-  if (this.angle2 < 0) this.angle2+=TWO_PI;
-};
-
-CelticEdge.prototype.angle = function(n)
-{
-  // return the angle of the edge at Node n
-  if (n===this._origin) {
-    return this.angle1;
-  } else {
-    return this.angle2;
-  }
 };
 
 CelticEdge.prototype.other_node = function(n)
@@ -36,21 +19,6 @@ CelticEdge.prototype.other_node = function(n)
   if (n==this.org()) return this.dest(); else return this.org();
 };
 
-CelticEdge.prototype.angle_to = function(e2, node, direction)
-{
-  /* returns the absolute angle from this edge to "edge2" around
-   "node" following "direction" */
-  var a;
-
-//  TODO: angle1 and angle2 isn't defined for all edges
-
-  if (direction===CLOCKWISE)
-    a=this.angle(node) - e2.angle(node);
-  else
-    a=e2.angle(node) - this.angle(node);
-
-  if (a<0) return a+2*PI; else return a;
-};
 
 //================================================================================
 
@@ -189,8 +157,24 @@ Pattern.prototype = {
     var x4=(edge2.org().x()+edge2.dest().x())/2.0;
     var y4=(edge2.org().y()+edge2.dest().y())/2.0;
 
-//    var alpha=edge1.angle_to(edge2,node,direction)*this.shape1;
-    var alpha=this.shape1;
+    // angle formed by the edges: acos(scalar_product(edge1, edge2))
+    var e1x = edge1.dest().x() - edge1.org().x();
+    var e1y = edge1.dest().y() - edge1.org().y();
+    var e1m = Math.sqrt(e1x*e1x+e1y*e1y);
+    e1x/=e1m;
+    e1y/=e1m;
+
+    var e2x = edge2.dest().x() - edge2.org().x();
+    var e2y = edge2.dest().y() - edge2.org().y();
+    var e2m = Math.sqrt(e2x*e2x+e2y*e2y);
+    e2x/=e2m;
+    e2y/=e2m;
+
+    var angle = Math.acos(e1x*e2x + e1y*e2y);
+
+    print(angle);
+
+    var alpha=angle*this.shape1;
     var beta=this.shape2;
 
     var i1x,i1y,i2x,i2y,x2,y2,x3,y3;
@@ -444,20 +428,9 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 
 //===========================================================================
 
-function circle(cx,cy,radius)
-{
-  g_ctx.lineWidth = 2;
-  g_ctx.beginPath();
-  g_ctx.arc(cx,cy,radius,0,TWO_PI,false);
-  g_ctx.closePath();
-  g_ctx.stroke();
-}
-
-//===========================================================================
 
 function print(text)
 {
   if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
   else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
 }
-
