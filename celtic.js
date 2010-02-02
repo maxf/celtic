@@ -84,7 +84,8 @@ Pattern.prototype = {
     // - edge2: ditto
     // - direction: whether the bezier should go clockwise or anticlockwise around the node
     //
-    //   *-----------------*--------------*
+    //  P1     (x1,y1)          (x4,y4)   P2
+    //   *-------x---------*------x-------*
     //         edge1      node   edge2
 
 
@@ -96,29 +97,45 @@ Pattern.prototype = {
 
 //    print("addBezierCurve(s :"+s+", node: "+node+", edge1: "+edge1+", edge2: "+edge2+", direction: "+direction);
 
-    var x1=(edge1.org().x()+edge1.dest().x())/2.0;
-    var y1=(edge1.org().y()+edge1.dest().y())/2.0;
+    var P1x, P1y, P2x, P2y;
+    if (edge1.org() == node) {
+      P1x = edge1.dest().x();
+      P1y = edge1.dest().y();
+    } else {
+      P1x = edge1.org().x();
+      P1y = edge1.org().y();
+    }
 
-    var x4=(edge2.org().x()+edge2.dest().x())/2.0;
-    var y4=(edge2.org().y()+edge2.dest().y())/2.0;
+    if (edge2.org() == node) {
+      P2x = edge2.dest().x();
+      P2y = edge2.dest().y();
+    } else {
+      P2x = edge2.org().x();
+      P2y = edge2.org().y();
+    }
+
+    var nx = node.x(), ny=node.y();
+    var x1=(P1x+nx)/2.0;
+    var y1=(P1y+ny)/2.0;
+    var x4=(P2x+nx)/2.0;
+    var y4=(P2y+ny)/2.0;
 
     // angle formed by the edges: acos(scalar_product(edge1, edge2))
-    var e1x = edge1.dest().x() - edge1.org().x();
-    var e1y = edge1.dest().y() - edge1.org().y();
+    var e1x = P1x - nx;
+    var e1y = P1y - ny;
     var e1m = Math.sqrt(e1x*e1x+e1y*e1y);
-    e1x/=e1m;
-    e1y/=e1m;
 
-    var e2x = edge2.dest().x() - edge2.org().x();
-    var e2y = edge2.dest().y() - edge2.org().y();
+    e1x = e1x/e1m;
+    e1y = e1y/e1m;
+
+    var e2x = P2x - nx;
+    var e2y = P2y - ny;
     var e2m = Math.sqrt(e2x*e2x+e2y*e2y);
-    e2x/=e2m;
-    e2y/=e2m;
+
+    e2x = e2x / e2m;
+    e2y = e2y / e2m;
 
     var angle = Math.acos(e1x*e2x + e1y*e2y);
-
-    print(angle);
-
     var alpha=angle*this.shape1;
     var beta=angle*this.shape2;
 
@@ -127,10 +144,10 @@ Pattern.prototype = {
     switch(direction) {
     case ANTICLOCKWISE:
       // (i1x,i2x) must stick out to the left of NP1 and I2 to the right of NP4
-      i1x =  alpha*(node.y()-y1)+x1;
-      i1y = -alpha*(node.x()-x1)+y1;
-      i2x = -alpha*(node.y()-y4)+x4;
-      i2y =  alpha*(node.x()-x4)+y4;
+      i1x =  alpha*(ny-y1)+x1;
+      i1y = -alpha*(nx-x1)+y1;
+      i2x = -alpha*(ny-y4)+x4;
+      i2y =  alpha*(nx-x4)+y4;
       x2 =  beta*(y1-i1y) + i1x;
       y2 = -beta*(x1-i1x) + i1y;
       x3 = -beta*(y4-i2y) + i2x;
@@ -138,10 +155,10 @@ Pattern.prototype = {
       break;
     case CLOCKWISE:
       // I1 must stick out to the left of NP1 and I2 to the right of NP4
-      i1x = -alpha*(node.y()-y1)+x1;
-      i1y =  alpha*(node.x()-x1)+y1;
-      i2x =  alpha*(node.y()-y4)+x4;
-      i2y = -alpha*(node.x()-x4)+y4;
+      i1x = -alpha*(ny-y1)+x1;
+      i1y =  alpha*(nx-x1)+y1;
+      i2x =  alpha*(ny-y4)+x4;
+      i2y = -alpha*(nx-x4)+y4;
       x2 = -beta*(y1-i1y) + i1x;
       y2 =  beta*(x1-i1x) + i1y;
       x3 =  beta*(y4-i2y) + i2x;
@@ -345,7 +362,7 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 
 
   this.draw = function() {
-
+    /*
     G2D.circle(this._x1, this._y1, 2.0);
     G2D.circle(this._x2, this._y2, 2.0);
     G2D.circle(this._x3, this._y3, 2.0);
@@ -353,7 +370,7 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
     G2D.line(this._x1,this._y1, this._x2,this._y2);
     G2D.line(this._x2,this._y2, this._x3,this._y3);
     G2D.line(this._x3,this._y3, this._x4,this._y4);
-
+*/
 
     var step=0.05, t=step, p1 = this._bernstein3(0), p2;
 
