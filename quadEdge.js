@@ -289,7 +289,6 @@ Edge.prototype = {
    */
   connectTo: function(edgeConstructor, b)
   {
-//    var e=makeEdge();
     var e = new QuadEdge(edgeConstructor).baseEdge();
 
     e.spliceWith(this.lNext());
@@ -400,6 +399,10 @@ var Subdivision = function(a,b,c,edgeConstructor) {
   var db = new Node(b.x(), b.y());// Graph.allNodes.push(db);
   var dc = new Node(c.x(), c.y());// Graph.allNodes.push(dc);
 
+  da.isInOriginalTriangulation = true;
+  db.isInOriginalTriangulation = true;
+  dc.isInOriginalTriangulation = true;
+
 //  var ea = makeEdge();
 //  ea.endPoints(da,db);
 
@@ -419,6 +422,7 @@ var Subdivision = function(a,b,c,edgeConstructor) {
 
   this._listEdges();
 
+  return this;
 };
 
 Subdivision.prototype = {
@@ -491,8 +495,11 @@ Subdivision.prototype = {
 	 */
   draw: function() {
   	if (this.edgeList) {
-	    for (var i=0;i<this.edgeList.length;i++) {
-    	  this.edgeList[i].draw();
+	    for (var i=this.edgeList.length-1;i>=0;i--) {
+        var e=this.edgeList[i];
+        // skip edges to origin points
+        if (!e.org().isInOriginalTriangulation && !e.dest().isInOriginalTriangulation)
+      	  this.edgeList[i].draw();
       }
     }
   },
@@ -545,6 +552,9 @@ Subdivision.prototype = {
       e=addedEdges.pop();
       if(!this._edgeListContains(e.sym())) {
         this.edgeList.push(e);
+        // mark the edges that connect to any of the 3 original nodes
+        if (e.org().isInOriginalTriangulation || e.dest().isInOriginalTriangulation)
+          e.ignoreForCurves = true;
       }
       var neighbours=[e.oNext(), e.oPrev(), e.dNext(), e.dPrev()];
       for (var i=neighbours.length-1; i>=0;i--) {

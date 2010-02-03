@@ -180,10 +180,12 @@ Pattern.prototype = {
   {
     var edges = this.graph.edgeList;
     for (var i=edges.length-1; i>=0; i--) {
-      if (!edges[i].leftCurveIsComputed) return {edge: edges[i], direction: ANTICLOCKWISE};
-      if (!edges[i].rightCurveIsComputed) return {edge: edges[i], direction: CLOCKWISE};
+      if (!edges[i].org().isInOriginalTriangulation && !edges[i].dest().isInOriginalTriangulation) {
+        if (!edges[i].leftCurveIsComputed) return {edge: edges[i], direction: ANTICLOCKWISE};
+        if (!edges[i].rightCurveIsComputed) return {edge: edges[i], direction: CLOCKWISE};
+      }
     }
-    return null; // all the curves have been comnputed.
+    return null; // all the curves have been computed.
   },
 
   makeCurves: function()
@@ -224,6 +226,12 @@ Pattern.prototype = {
         }
 
         next_edge = this.graph.nextEdgeAround(current_node,current_edge,current_direction);
+
+        // if the edge found is not to be used, go for the next one
+        while ((next_edge.org().isInOriginalTriangulation || next_edge.dest().isInOriginalTriangulation) &&
+               (next_edge!=current_edge)) {
+          next_edge = this.graph.nextEdgeAround(current_node,next_edge,current_direction);
+        }
 
         // add the spline segment to the spline
         this.addBezierCurve(s,current_node, current_edge, next_edge, current_direction);
@@ -370,7 +378,7 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
     G2D.line(this._x1,this._y1, this._x2,this._y2);
     G2D.line(this._x2,this._y2, this._x3,this._y3);
     G2D.line(this._x3,this._y3, this._x4,this._y4);
-*/
+      */
 
     var step=0.05, t=step, p1 = this._bernstein3(0), p2;
 

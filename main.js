@@ -19,6 +19,10 @@ init: function()
     var node2 = new Node(offset+DelaunayCeltic.width/(2*scale), offset-DelaunayCeltic.height/(2*scale));
     var node3 = new Node(offset+2*DelaunayCeltic.width/scale, offset+DelaunayCeltic.height/scale+1);
 
+    node1.shouldBeIgnoredWhenDrawing = true;
+    node2.shouldBeIgnoredWhenDrawing = true;
+    node3.shouldBeIgnoredWhenDrawing = true;
+
 //    var node1 = new Node(100,100);
 //    var node2 = new Node(500,100);
 //    var node3 = new Node(300,440);
