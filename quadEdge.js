@@ -7,6 +7,7 @@ var Node = function(new_x, new_y)
 {
   this._x=new_x;
   this._y=new_y;
+  return this;
 };
 
 Node.prototype = {
@@ -14,7 +15,7 @@ Node.prototype = {
   y: function() { return this._y; },
   setX: function(new_x) { this._x=new_x; },
   setY: function(new_y) { this._y=new_y; },
-  draw: function() { G2D.circle(this._x, this._y, 4.0); },
+  draw: function() { G2D.circle(this._x, this._y, 4.0); return this; },
   toString: function() { return "Node: {x:"+this._x+", y:"+this._y+"}"; },
 
   /*
