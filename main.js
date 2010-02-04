@@ -1,3 +1,14 @@
+
+const CLOCKWISE=0;
+const ANTICLOCKWISE=1;
+
+function print(text)
+{
+  if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
+  else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
+}
+
+
 DelaunayCeltic = window.DelaunayCeltic || {
 
 init: function()
