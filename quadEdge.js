@@ -7,6 +7,8 @@ var Node = function(new_x, new_y)
 {
   this._x=new_x;
   this._y=new_y;
+  this.leftCurveIsComputed = false; // The curve starting from the left side of this edge hasn't been computed yet
+  this.rightCurveIsComputed = false;  // The curve starting from the right side of this edge hasn't been computed yet
   return this;
 };
 
@@ -154,6 +156,16 @@ Edge.prototype = {
   },
 
   /*
+   * returns the node of this edge that is not the one passed
+   */
+  other_node: function(n) {
+    if (n==this.org())
+      return this.dest();
+    else
+      return this.org();
+  },
+
+  /*
    * returns (as an Edge) the dual of the current edge, directed from its left to its right
    */
   invRot: function() {
@@ -288,9 +300,9 @@ Edge.prototype = {
    * parameters: b: Edge
    * returns: Edge
    */
-  connectTo: function(edgeConstructor, b)
+  connectTo: function(b)
   {
-    var e = new QuadEdge(edgeConstructor).baseEdge();
+    var e = new QuadEdge().baseEdge();
 
     e.spliceWith(this.lNext());
     e.sym().spliceWith(b);
@@ -346,7 +358,7 @@ Edge.prototype = {
  * QuadEdge Class
  */
 
-var QuadEdge = function(edgeConstructor, node1, node2) {
+var QuadEdge = function(node1, node2) {
   this._edges = new Array(4);
   // array of 4 Edges:
   // [0] the base edge of this QuadEdge
@@ -355,7 +367,7 @@ var QuadEdge = function(edgeConstructor, node1, node2) {
   // [3] the dual of the base edge which goes from its left to its right
 
   for (var i=0;i<4;i++) {
-    this._edges[i] = new edgeConstructor();
+    this._edges[i] = new Edge();
     this._edges[i]._num=i;
     this._edges[i]._quad = this;
   }
@@ -388,10 +400,8 @@ QuadEdge.prototype = {
  * Subdivision: a subdivision of the plane into polygons
  */
 
-var Subdivision = function(a,b,c,edgeConstructor) {
+var Subdivision = function(a,b,c) {
   // a,b,c are the Nodes of the original triangle
-
-  this.edgeType = edgeConstructor;
 
   // Attributes:
   //  startingEdge: the first Edge of this subdivision, from a to b
@@ -407,15 +417,15 @@ var Subdivision = function(a,b,c,edgeConstructor) {
 //  var ea = makeEdge();
 //  ea.endPoints(da,db);
 
-  var ea = new QuadEdge(this.edgeType, da, db).baseEdge();
+  var ea = new QuadEdge(da, db).baseEdge();
 
 //  var eb = makeEdge();
-  var eb = new QuadEdge(this.edgeType).baseEdge();
+  var eb = new QuadEdge().baseEdge();
 
   ea.sym().spliceWith(eb);
   eb.endPoints(db,dc);
 //  var ec = makeEdge();
-  var ec = new QuadEdge(this.edgeType).baseEdge();
+  var ec = new QuadEdge().baseEdge();
   eb.sym().spliceWith(ec);
   ec.endPoints(dc,da);
   ec.sym().spliceWith(ea);
@@ -434,7 +444,7 @@ Subdivision.prototype = {
   edgeList: null,
 
   toString: function() {
-    return "Subdivision: {edgeType: "+this.edgeType+"startingEdge: "+this.startingEdge+"}";
+    return "Subdivision: {startingEdge: "+this.startingEdge+"}";
   },
 
   /*
@@ -462,12 +472,12 @@ Subdivision.prototype = {
     // triangle (or quadrilateral, if the new point fell on an
     // existing edge.)
 
-    var base = new QuadEdge(this.edgeType).baseEdge();
+    var base = new QuadEdge().baseEdge();
     base.endPoints(e.org(), new Node(x.x(),x.y()));
     base.spliceWith(e);
     this.startingEdge = base;
     do {
-      base = e.connectTo(this.edgeType, base.sym());
+      base = e.connectTo(base.sym());
       e = base.oPrev();
     } while (e.lNext() != this.startingEdge);
 

@@ -1,26 +1,3 @@
-function CelticEdge() {
-  Edge.call(this);
-  this.leftCurveIsComputed = false; // The curve starting from the left side of this edge hasn't been computed yet
-  this.rightCurveIsComputed = false;  // The curve starting from the right side of this edge hasn't been computed yet
-};
-
-// Prototype chain for inheritance
-CelticEdge.prototype = new Edge();
-CelticEdge.constructor = CelticEdge;
-CelticEdge.superclass = Edge.prototype;
-
-CelticEdge.prototype.endPoints = function(n1,n2)
-{
-  CelticEdge.superclass.endPoints.call(this,n1,n2);
-};
-
-CelticEdge.prototype.other_node = function(n)
-{
-  if (n==this.org()) return this.dest(); else return this.org();
-};
-
-
-//================================================================================
 
 const CLOCKWISE=0;
 const ANTICLOCKWISE=1;

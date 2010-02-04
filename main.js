@@ -29,7 +29,7 @@ init: function()
     node2.shouldBeIgnoredWhenDrawing = true;
     node3.shouldBeIgnoredWhenDrawing = true;
 
-    DelaunayCeltic.subdivision = new Subdivision(node1,node2,node3, CelticEdge);
+    DelaunayCeltic.subdivision = new Subdivision(node1,node2,node3);
 
     // simulate a click, for testing
 //    DelaunayCeltic.clicked({clientX: 300, clientY: 200});
