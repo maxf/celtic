@@ -33,3 +33,11 @@ G2D.clear = function(r,g,b) {
   this.ctx.fillStyle="rgb("+r+","+g+","+g+")";
   this.ctx.fillRect(0,0,this.width,this.height);
 };
+
+G2D.text = function(x,y,text) {
+  this.ctx.strokeText(text,x,y);
+}
+
+G2D.strokeColour = function(r,g,b)  {
+  this.ctx.strokeStyle = "rgb("+r+","+g+","+b+")";
+}

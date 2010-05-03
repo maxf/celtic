@@ -31,7 +31,8 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 
 
   this.draw = function() {
-    /*
+    // Control polygon
+
     G2D.circle(this._x1, this._y1, 2.0);
     G2D.circle(this._x2, this._y2, 2.0);
     G2D.circle(this._x3, this._y3, 2.0);
@@ -39,7 +40,7 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
     G2D.line(this._x1,this._y1, this._x2,this._y2);
     G2D.line(this._x2,this._y2, this._x3,this._y3);
     G2D.line(this._x3,this._y3, this._x4,this._y4);
-      */
+
 
     var step=0.05, t=step, p1 = this._bernstein3(0), p2;
 

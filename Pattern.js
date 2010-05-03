@@ -1,4 +1,3 @@
-
 /* Class Pattern
  * A set of closed curves that form a motif
  *
@@ -16,11 +15,6 @@ function Pattern(subdivision, shape1, shape2)
 }
 
 Pattern.prototype = {
-
-  draw: function()
-  {
-    print(this.toString());
-  },
 
   getSplines: function()
   {
@@ -67,8 +61,6 @@ Pattern.prototype = {
     // (x3,y3) ditto.
     // (x4,y4) the midpoint of edge2
 
-//    print("addBezierCurve(s :"+s+", node: "+node+", edge1: "+edge1+", edge2: "+edge2+", direction: "+direction);
-
     var P1x, P1y, P2x, P2y;
     if (edge1.org() == node) {
       P1x = edge1.dest().x();
@@ -96,26 +88,37 @@ Pattern.prototype = {
     var e1x = P1x - nx;
     var e1y = P1y - ny;
     var e1m = Math.sqrt(e1x*e1x+e1y*e1y);
-
-    e1x = e1x/e1m;
-    e1y = e1y/e1m;
-
+//
+//    e1x = e1x/e1m;
+//    e1y = e1y/e1m;
+//
     var e2x = P2x - nx;
     var e2y = P2y - ny;
     var e2m = Math.sqrt(e2x*e2x+e2y*e2y);
+//
+//    e2x = e2x / e2m;
+//    e2y = e2y / e2m;
+//
+//    var angle = Math.acos(e1x*e2x + e1y*e2y);
 
-    e2x = e2x / e2m;
-    e2y = e2y / e2m;
+    var angle = Math.asin((e1x*e2y - e1y*e2x) / (e1m * e2m));
 
-    var angle = Math.acos(e1x*e2x + e1y*e2y);
-    var alpha=angle*this.shape1;
-    var beta=angle*this.shape2;
+    angle+=2*Math.PI;
+
+    var alpha,beta;
 
     var i1x,i1y,i2x,i2y,x2,y2,x3,y3;
 
     switch(direction) {
     case ANTICLOCKWISE:
       // (i1x,i2x) must stick out to the left of NP1 and I2 to the right of NP4
+      if (angle<Math.PI) {
+        alpha = beta = angle/10;
+      } else {
+        alpha = beta = angle/3;
+      }
+      alpha=beta=.5;
+
       i1x =  alpha*(ny-y1)+x1;
       i1y = -alpha*(nx-x1)+y1;
       i2x = -alpha*(ny-y4)+x4;
@@ -127,6 +130,12 @@ Pattern.prototype = {
       break;
     case CLOCKWISE:
       // I1 must stick out to the left of NP1 and I2 to the right of NP4
+      if (angle<Math.PI) {
+        alpha = beta = angle/3;
+      } else {
+        alpha = beta = angle/10;
+      }
+      alpha=beta=.5;
       i1x = -alpha*(ny-y1)+x1;
       i1y =  alpha*(nx-x1)+y1;
       i2x =  alpha*(ny-y4)+x4;
@@ -139,7 +148,6 @@ Pattern.prototype = {
     default:
       print("Error in addBezierCurve: direction is neither CLOCKWISE nor ANTICLOCKWISE: "+direction);
     }
-//    print("adding Bezier ("+x1+","+y1+" -- "+x2+","+y2+" -- "+x3+","+y3+" -- "+x4+","+y4+")");
     s.add_segment(x1,y1,x2,y2,x3,y3,x4,y4);
   },
 

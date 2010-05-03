@@ -43,7 +43,11 @@ init: function()
     DelaunayCeltic.subdivision = new Subdivision(node1,node2,node3);
 
     // simulate a click, for testing
-//    DelaunayCeltic.clicked({clientX: 300, clientY: 200});
+    DelaunayCeltic.clicked({clientX: 600, clientY: 300});
+    DelaunayCeltic.clicked({clientX: 300, clientY: 300});
+    DelaunayCeltic.clicked({clientX: 300, clientY: 600});
+
+
 //    DelaunayCeltic.subdivision.draw();
 //    DelaunayCeltic.pattern = new Pattern(DelaunayCeltic.subdivision, DelaunayCeltic.param1, DelaunayCeltic.param2)
 //    .makeCurves()
