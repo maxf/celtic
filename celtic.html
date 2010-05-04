@@ -2,9 +2,33 @@
 <html>
   <head>
     <title>Celtic</title>
+		<link type="text/css" href="css/ui-lightness/jquery-ui-1.8.1.custom.css" rel="stylesheet" />
+    <style type="text/css">
+      #controls {
+        background-color: grey;
+        margin-bottom: 1em;
+      }
+      #slider-shape1 {
+        margin-bottom: 1em;
+      }
+
+    </style>
+		<script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.8.1.custom.min.js"></script>
+    <script type="text/javascript">
+      $(function(){
+        $('#slider-shape1').slider({ value: 0, min: -2, max: 2, step: 0.01 });
+        $('#slider-shape2').slider({ value: 0, min: -2, max: 2, step: 0.01 });
+      });
+    </script>
   </head>
   <body>
+    <div id="controls">
+      <div id="slider-shape1"></div>
+      <div id="slider-shape2"></div>
+    </div>
+
     <canvas id="canvas" width="1000" height="1000"></canvas>
     <script src="celtic.js"></script>
- </body>
+  </body>
 </html>
