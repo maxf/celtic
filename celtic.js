@@ -925,7 +925,7 @@ function draw() {
   intervalId = setInterval(drawOneStep,delay);
 
   function drawOneStep() {
-    if(t>1.0) clearInterval(intervalId);
+    if(t>=1.0) clearInterval(intervalId);
     else {
       t2 = (t+step>1.0) ? 1.0 : t+step;
 
