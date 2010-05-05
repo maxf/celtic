@@ -4,9 +4,16 @@
     <title>Celtic</title>
     <link type="text/css" href="css/ui-lightness/jquery-ui-1.8.1.custom.css" rel="stylesheet" />
     <style type="text/css">
+      body {
+        font:65% "Trebuchet MS",sans-serif;
+        width: 800px;
+        margin: 0;
+        padding: 10px;
+      }      
       #controls {
-        background-color: grey;
+        border: 2px solid black;
         margin-bottom: 1em;
+        padding: 1em;
       }
       #slider-shape1 {
         margin-bottom: 1em;
@@ -16,19 +23,50 @@
     <script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
     <script type="text/javascript" src="js/jquery-ui-1.8.1.custom.min.js"></script>
     <script type="text/javascript">
-      $(function(){
+
+      $(document).ready(function(){
+
         $('#slider-shape1').slider({ value: 0, min: -2, max: 2, step: 0.01 });
         $('#slider-shape2').slider({ value: 0, min: -2, max: 2, step: 0.01 });
+        $(".ui-slider").bind("slidechange", function(event, ui) {
+        
+        });
+
+        function main() {
+          celtic.main({type:$('#type').val(),
+                       shape1:$('#slider-shape1').slider('value'),
+                       shape2:$('#slider-shape2').slider('value')});
+        };
+
+
+        $("#go").bind("click", function(event, ui) {
+          main();
+        });
+
+        var celtic = new Celtic();
+        main();
+
       });
     </script>
   </head>
   <body>
     <div id="controls">
-      <div id="slider-shape1"></div>
-      <div id="slider-shape2"></div>
+      Type:
+      <select id="type">
+        <option>Polar</option>
+        <option>Triangle</option>
+        <option>Kennicott</option>
+        <option>Grid</option>
+        <option>Random</option>
+      </select>
+      <input type="button" id="go" value="Go"/>
+      <p>Shape1:</p>
+      <div id="slider-shape1" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+      <p>Shape2:</p>
+      <div id="slider-shape2" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
     </div>
 
-    <canvas id="canvas" width="1000" height="1000"></canvas>
+    <canvas id="canvas" height="800px" width="800px"></canvas>
     <script src="celtic.js"></script>
   </body>
 </html>

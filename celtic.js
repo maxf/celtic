@@ -1,9 +1,8 @@
-(function() {
-
-
+var Celtic = function()
+{
 function Params()
 {
-  var step=0.01; // parameter increment for progressive rendering
+  this.step=0.01; // parameter increment for progressive rendering
   var delay;        /* controls curve drawing speed (step delay in microsecs) */
 
   //@@ Move values below outside of user-settable parameters
@@ -20,7 +19,7 @@ function Params()
 
   this.getShape1 = function() { return shape1; };
   this.getShape2 = function() { return shape2; };
-  this.getStep = function() { return step; };
+  this.getStep = function() { return this.step; };
   this.getDelay = function() { return delay; };
   this.getAngle = function() { return angle; };
   this.setAngle = function(newAngle) { angle=newAngle; };
@@ -41,8 +40,6 @@ if (g_canvas) {
   g_ctx.shadowOffsetY=5;
   g_ctx.shadowBlur=3;
 }
-else
-  return;
 
 const WIDTH=document.getElementById("canvas").width;
 const HEIGHT=document.getElementById("canvas").height;
@@ -454,11 +451,13 @@ Graph.prototype.rotate = function(angle, cx, cy)
   }
 };
 
-Graph.TYPE_POLAR=0;
-Graph.TYPE_TGRID=1;
-Graph.TYPE_KENNICOTT=2;
-Graph.TYPE_TRIANGLE=3;
-Graph.TYPE_CUSTOM=4;
+Graph.TYPE_POLAR="Polar";
+Graph.TYPE_TGRID="Grid";
+Graph.TYPE_KENNICOTT="Kennicott";
+Graph.TYPE_TRIANGLE="Triangle";
+Graph.TYPE_CUSTOM="Custom";
+Graph.TYPE_RANDOM="Random";
+
 
 
 
@@ -766,8 +765,11 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 
 //================================================================================
 
-function State()
+function State(params)
 {
+  this.params = params;
+
+
   var showGraph; //Boolean
   var pattern;
   var graph;
@@ -776,8 +778,6 @@ function State()
   var reset;
   var t;
   var graphRotationAngle = randomFloat(0,2*PI);
-
-  var params = new Params();
 
   this.getStep = function() { return step; };
   this.getPattern = function() { return pattern; };
@@ -796,7 +796,8 @@ function State()
   params.delay=0;
   params.margin=randomFloat(0,100);
 
-  params.type=randomInt(0,4);
+  if (params.type == Graph.TYPE_RANDOM)
+    params.type=randomInt(0,4);
 
   switch (params.type) {
     case Graph.TYPE_POLAR:
@@ -906,9 +907,9 @@ var s;
 var pi1, pi2, pi3, pi4;
 var start, end; // colors
 
-function setup()
+function setup(params)
 {
-  st=new State();
+  st=new State(params);
   g_ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
   g_ctx.fillRect(0,0,WIDTH,WIDTH);
 //  st.getGraph().draw();
@@ -952,14 +953,18 @@ function print(text)
 }
 
 
-function main()
+this.main = function(params)
 {
-  setup();
+  var fullParams = new Params();
+  fullParams.type = params.type;
+  fullParams.shape1 = params.shape1;
+  fullParams.shape2 = params.shape2;
+  setup(fullParams);
   draw();
 }
 
-g_canvas.addEventListener('click',main,false);
-main();
+//g_canvas.addEventListener('click',main,false);
+//main();
 
 
-})();
+};
