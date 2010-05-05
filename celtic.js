@@ -451,12 +451,12 @@ Graph.prototype.rotate = function(angle, cx, cy)
   }
 };
 
-Graph.TYPE_POLAR="Polar";
-Graph.TYPE_TGRID="Grid";
-Graph.TYPE_KENNICOTT="Kennicott";
-Graph.TYPE_TRIANGLE="Triangle";
-Graph.TYPE_CUSTOM="Custom";
-Graph.TYPE_RANDOM="Random";
+Graph.TYPE_TGRID=0;
+Graph.TYPE_TRIANGLE=1;
+Graph.TYPE_POLAR=2;
+Graph.TYPE_KENNICOTT=3;
+Graph.TYPE_RANDOM=4;
+Graph.TYPE_CUSTOM=5;
 
 
 

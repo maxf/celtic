@@ -15,7 +15,7 @@
         margin-bottom: 1em;
         padding: 1em;
       }
-      #slider-shape1 {
+      .ui-slider {
         margin-bottom: 1em;
       }
 
@@ -25,17 +25,18 @@
     <script type="text/javascript">
 
       $(document).ready(function(){
-
+        $("#tabs").tabs();
         $('#slider-shape1').slider({ value: 0, min: -2, max: 2, step: 0.01 });
         $('#slider-shape2').slider({ value: 0, min: -2, max: 2, step: 0.01 });
+        $('#slider-step').slider({ value: 0.01, min: 0.01, max: 0.5, step: 0.01 });
         $(".ui-slider").bind("slidechange", function(event, ui) {
         
         });
 
         function main() {
-          celtic.main({type:$('#type').val(),
-                       shape1:$('#slider-shape1').slider('value'),
-                       shape2:$('#slider-shape2').slider('value')});
+          celtic.main({type: $("#tabs").tabs().tabs('option','selected'),
+                       shape1: $('#slider-shape1').slider('value'),
+                       shape2: $('#slider-shape2').slider('value')});
         };
 
 
@@ -51,19 +52,41 @@
   </head>
   <body>
     <div id="controls">
-      Type:
-      <select id="type">
-        <option>Polar</option>
-        <option>Triangle</option>
-        <option>Kennicott</option>
-        <option>Grid</option>
-        <option>Random</option>
-      </select>
       <input type="button" id="go" value="Go"/>
-      <p>Shape1:</p>
-      <div id="slider-shape1" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
-      <p>Shape2:</p>
-      <div id="slider-shape2" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+
+      <div id="pane1" style="width:350px; float: left">
+        <p>Shape1:</p><div id="slider-shape1" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+        <p>Shape2:</p><div id="slider-shape2" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+        <p>Step:</p><div id="slider-step" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+      </div>
+      <div id="pane2" style="width:350px; float: right">
+        <p>Width:</p><div id="slider-width" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+      </div>
+        <div id="tabs" style="clear:both">
+        <ul>
+          <li><a href="#tab-grid"><span>Grid</span></a></li>
+          <li><a href="#tab-triangle"><span>Triangle</span></a></li>
+          <li><a href="#tab-polar"><span>Polar</span></a></li>
+          <li><a href="#tab-kennicott"><span>Kennicott</span></a></li>
+          <li><a href="#tab-random"><span>Random</span></a></li>
+        </ul>
+
+        <div id="tab-grid">
+          <h2>Grid</h2>
+        </div>
+        <div id="tab-triangle">
+          <h2>Triangle</h2>
+        </div>
+        <div id="tab-polar">
+          <h2>Polar</h2>
+        </div>
+        <div id="tab-kennicott">
+          <h2>Kennicott</h2>
+        </div>
+        <div id="tab-random">
+          <h2>Random</h2>
+        </div>
+      </div>
     </div>
 
     <canvas id="canvas" height="800px" width="800px"></canvas>
