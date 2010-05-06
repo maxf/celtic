@@ -28,15 +28,28 @@
         $("#tabs").tabs();
         $('#slider-shape1').slider({ value: 0, min: -2, max: 2, step: 0.01 });
         $('#slider-shape2').slider({ value: 0, min: -2, max: 2, step: 0.01 });
+        $('#slider-width').slider({ value: 5, min: 1, max: 10, step: 0.1 });
         $('#slider-step').slider({ value: 0.01, min: 0.01, max: 0.5, step: 0.01 });
-        $(".ui-slider").bind("slidechange", function(event, ui) {
-        
-        });
+        $('#slider-margin').slider({ value: 0, min: 0, max: 200, step: 1 });
+        $('#slider-nb_orbits').slider({value:3, min:2, max:11, step:1});
+        $('#slider-nb_nodes_per_orbit').slider({value:5, min:4, max:13, step:1});
+        $('#slider-triangle-edge_size').slider({value:80, min:60, max:100, step:.1});
+        $('#slider-kennicott-edge_size').slider({value:80, min:70, max:90, step:.1});
+        $('#slider-tgrid-edge_size').slider({value:60, min:50, max:90, step:.1});
 
         function main() {
           celtic.main({type: $("#tabs").tabs().tabs('option','selected'),
                        shape1: $('#slider-shape1').slider('value'),
-                       shape2: $('#slider-shape2').slider('value')});
+                       shape2: $('#slider-shape2').slider('value'),
+                       width: $('#slider-width').slider('value'),
+                       step: $('#slider-step').slider('value'),
+                       margin: $('#slider-margin').slider('value'),
+                       nb_orbits: $('#slider-nb_orbits').slider('value'),
+                       nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
+                       triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
+                       tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
+                       kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value')
+                       });
         };
 
 
@@ -45,7 +58,7 @@
         });
 
         var celtic = new Celtic();
-        main();
+//        main();
 
       });
     </script>
@@ -61,30 +74,36 @@
       </div>
       <div id="pane2" style="width:350px; float: right">
         <p>Width:</p><div id="slider-width" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+        <p>Margin:</p><div id="slider-margin" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
       </div>
         <div id="tabs" style="clear:both">
         <ul>
+          <li><a href="#tab-random"><span>Random</span></a></li>
           <li><a href="#tab-grid"><span>Grid</span></a></li>
           <li><a href="#tab-triangle"><span>Triangle</span></a></li>
           <li><a href="#tab-polar"><span>Polar</span></a></li>
           <li><a href="#tab-kennicott"><span>Kennicott</span></a></li>
-          <li><a href="#tab-random"><span>Random</span></a></li>
         </ul>
 
+        <div id="tab-random">
+          <h2>Random</h2>
+        </div>
         <div id="tab-grid">
           <h2>Grid</h2>
+          <p>Edge Length:</p><div id="slider-tgrid-edge_size" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
         </div>
         <div id="tab-triangle">
           <h2>Triangle</h2>
+          <p>Edge Length:</p><div id="slider-triangle-edge_size" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
         </div>
         <div id="tab-polar">
           <h2>Polar</h2>
+          <p>Number of orbits:</p><div id="slider-nb_orbits" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+          <p>Number of nodes per orbit:</p><div id="slider-nb_nodes_per_orbit" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
         </div>
         <div id="tab-kennicott">
           <h2>Kennicott</h2>
-        </div>
-        <div id="tab-random">
-          <h2>Random</h2>
+          <p>Edge Length:</p><div id="slider-kennicott-edge_size" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
         </div>
       </div>
     </div>

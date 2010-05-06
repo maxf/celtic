@@ -5,14 +5,14 @@ function Params()
   this.step=0.01; // parameter increment for progressive rendering
   var delay;        /* controls curve drawing speed (step delay in microsecs) */
 
-  //@@ Move values below outside of user-settable parameters
   var curve_width, shadow_width; //float
   var shape1, shape2; //float
   var margin; //float
   var type; // int. one of Graph.TYPE_*
-  var edge_size;
+  var triangle_edge_size;
+  var tgrid_edge_size;
+  var kennicott_edge_size;
   var cluster_size; /* only used if type is kennicott */
-  var nsteps; /* only if triangle: number of subdivisions along the side */
   var nb_orbits;          /* only used if type is polar */
   var nb_nodes_per_orbit; /* only used if type is polar */
   var angle; /* angle of rotation of the graph around the centre */
@@ -193,14 +193,14 @@ function EdgeDirection (edge,direction)
 //======================================================================
 
 
-function Graph(type,xmin,ymin,width,height,param1,param2) {
-  this.type=type; // (TYPE_POLAR, TYPE_GRID...)
-  this.xmin = xmin;
-  this.ymin = ymin;
-  this.param1 = param1;
-  this.param2 = param2;
-  this.height = height;
-  this.width = width;
+//function Graph(type,xmin,ymin,width,height,param1,param2) {
+function Graph(params) {
+  this.params = params;
+
+  this.xmin = this.params.margin;
+  this.ymin = this.params.margin;
+  this.width = WIDTH - 2*this.params.margin;
+  this.height = HEIGHT - 2*this.params.margin;
   this.nodes = [];
   this.edges = [];
 
@@ -223,10 +223,10 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
     //    print("Adding: "+n+"\n");
   };
 
-  switch (this.type) {
+  switch (this.params.type) {
   case Graph.TYPE_POLAR:
-    var nbp=this.param1 | 0; // number of points on each orbit
-    var nbo=this.param2 | 0; // number of orbits
+    var nbp=this.params.nb_nodes_per_orbit | 0; // number of points on each orbit
+    var nbo=this.params.nb_orbits | 0; // number of orbits
     var os = (this.width<this.height?this.width:this.height)/(2*nbo); // orbit height
     var o,p, row, col; // iterator indexes
     grid = new Array(1+nbp*nbo); // array of Node
@@ -255,33 +255,33 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
     break;
 
   case Graph.TYPE_TRIANGLE:
-    var edge_size=param1;
-    var L=(width<height?width:height)/2.0; // circumradius of the triangle
-    cx=(xmin+width/2.0); cy=(ymin+height/2.0); /* centre of the triangle */
+    var edge_size=this.params.triangle_edge_size;;
+    var L=(this.width<this.height?this.width:this.height)/2.0; // circumradius of the triangle
+    cx=(this.xmin+this.width/2.0); cy=(this.ymin+this.height/2.0); /* centre of the triangle */
     var p2x=(cx-L*SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
-    var nsteps=Math.floor(3*L/(SQRT_3*edge_size)) | 0;
+    var nsteps=Math.floor(3*L/(SQRT_3*this.params.triangleedge_size)) | 0;
     grid = new Array((nsteps+1)*(nsteps+1));
 
     // create node grid
-    for (row=0;row<=nsteps;row++)
-      for (col=0;col<=nsteps;col++)
-        if (row+col<=nsteps) {
-          x=p2x+col*L*SQRT_3/nsteps + row*L*SQRT_3/(2*nsteps);
-          y=p2y-row*3*L/(2*nsteps);
-          grid[col+row*(nsteps+1)]=new Node(x, y);
-          this.add_node(grid[col+row*(nsteps+1)]);
+    for (row=0;row<=this.params.nstep;row++)
+      for (col=0;col<=this.params.nstep;col++)
+        if (row+col<=this.params.nstep) {
+          x=p2x+col*L*SQRT_3/this.params.nstep + row*L*SQRT_3/(2*this.params.nstep);
+          y=p2y-row*3*L/(2*this.params.nstep);
+          grid[col+row*(this.params.nstep+1)]=new Node(x, y);
+          this.add_node(grid[col+row*(this.params.nstep+1)]);
         }
 
     // create edges
-    for (row=0;row<nsteps;row++)
-      for (col=0;col<nsteps;col++)
-        if (row+col<nsteps) {
+    for (row=0;row<this.params.nstep;row++)
+      for (col=0;col<this.params.nstep;col++)
+        if (row+col<this.params.nstep) {
           // horizontal edges
-          this.add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
+          this.add_edge(new Edge(grid[row+col*(this.params.nstep+1)],grid[row+(col+1)*(this.params.nstep+1)]));
           // vertical edges
-          this.add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+1+col*(nsteps+1)]));
+          this.add_edge(new Edge(grid[row+col*(this.params.nstep+1)],grid[row+1+col*(this.params.nstep+1)]));
           // diagonal edges
-          this.add_edge(new Edge(grid[row+1+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
+          this.add_edge(new Edge(grid[row+1+col*(this.params.nstep+1)],grid[row+(col+1)*(this.params.nstep+1)]));
         }
     break;
 
@@ -292,23 +292,23 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
     //                                       \|/
     // cluster_size is the length of an edge of a cluster
 
-    step=param1;
-    var cluster_size=param2;
-    size=width<height?height:width;
+    step=this.params.kennicott_edge_size;
+    var cluster_size=this.params.cluster_size;
+    size=this.width<this.height?this.height:this.width;
     nbcol=Math.floor((1+size/step)/2*2) | 0; //@@ was (int)((1+size/step)/2*2)
     nbrow=Math.floor((1+size/step)/2*2) | 0;
     grid = new Array(5*nbrow*nbcol);   /* there are 5 nodes in each cluster */
 
     /* adjust xmin and xmax so that the grid is centred */
-    xmin+=(width-(nbcol-1)*step)/2;
-    ymin+=(height-(nbrow-1)*step)/2;
+    this.xmin+=(this.width-(nbcol-1)*step)/2;
+    this.ymin+=(this.height-(nbrow-1)*step)/2;
 
     /* create node grid */
     for (row=0;row<nbrow;row++)
       for (col=0;col<nbcol;col++) {
         var ci=5*(row+col*nbrow);
-        x=col*step+xmin;
-        y=row*step+ymin;
+        x=col*step+this.xmin;
+        y=row*step+this.ymin;
 
         /* create a cluster centred on x,y */
         grid[ci  ]=new Node(x, y);
@@ -351,8 +351,8 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
 
   case Graph.TYPE_TGRID:
     // simple grid graph
-    step=param1; //was (int)param1
-    size=width<height?height:width;
+    step = params.tgrid_edge_size | 0;
+    size = this.width<this.height?this.height:this.width;
 
     // empirically, it seems there are 2 curves only if both
     // nbcol and nbrow are even, so we round them to even
@@ -364,14 +364,14 @@ function Graph(type,xmin,ymin,width,height,param1,param2) {
     grid = new Array((nbrow*nbcol)|0);
 
     /* adjust xmin and xmax so that the grid is centered */
-    xmin+=(width-(nbcol-1)*step)/2;
-    ymin+=(height-(nbrow-1)*step)/2;
+    this.xmin+=(this.width-(nbcol-1)*step)/2;
+    this.ymin+=(this.height-(nbrow-1)*step)/2;
 
     /* create node grid */
     for (row=0;row<nbrow;row++)
       for (col=0;col<nbcol;col++) {
-        x=col*step+xmin;
-        y=row*step+ymin;
+        x=col*step+this.xmin;
+        y=row*step+this.ymin;
         grid[row+col*nbrow]=new Node(x, y);
         this.add_node(grid[row+col*nbrow]);
       }
@@ -451,11 +451,11 @@ Graph.prototype.rotate = function(angle, cx, cy)
   }
 };
 
-Graph.TYPE_TGRID=0;
-Graph.TYPE_TRIANGLE=1;
-Graph.TYPE_POLAR=2;
-Graph.TYPE_KENNICOTT=3;
-Graph.TYPE_RANDOM=4;
+Graph.TYPE_RANDOM=0;
+Graph.TYPE_TGRID=1;
+Graph.TYPE_TRIANGLE=2;
+Graph.TYPE_POLAR=3;
+Graph.TYPE_KENNICOTT=4;
 Graph.TYPE_CUSTOM=5;
 
 
@@ -770,107 +770,105 @@ function State(params)
   this.params = params;
 
 
-  var showGraph; //Boolean
-  var pattern;
-  var graph;
-  var width, height;
-  var delay2;
-  var reset;
-  var t;
-  var graphRotationAngle = randomFloat(0,2*PI);
+//  var showGraph; //Boolean
+//  var pattern;
+//  var graph;
+//  var width, height;
+//  var delay2;
+//  var reset;
+//  var t;
+  this.graphRotationAngle = randomFloat(0,2*PI);
 
-  this.getStep = function() { return step; };
-  this.getPattern = function() { return pattern; };
-  this.getGraph = function() { return graph; };
-  this.getParams = function() { return params; };
-  this.getGraphRotationAngle = function() { return graphRotationAngle; };
+  this.getStep = function() { return this.step; };
+  this.getPattern = function() { return this.pattern; };
+  this.getGraph = function() { return this.graph; };
+  this.getParams = function() { return this.params; };
+  this.getGraphRotationAngle = function() { return this.graphRotationAngle; };
 
   // Constructor
   params.curve_width=randomFloat(4,10);
   params.shadow_width=params.curve_width+4;
   //  params.shape1=randomFloat(.5,2);
   //  params.shape2=randomFloat(.5,2);
-  params.shape1=.5;
-  params.shape2=.5;
-  params.edge_size=randomFloat(20,60);
-  params.delay=0;
-  params.margin=randomFloat(0,100);
 
-  if (params.type == Graph.TYPE_RANDOM)
-    params.type=randomInt(0,4);
+  // if the type is random, then we pick one other type and compute
+  // its parameter randomly. Otherwise it is expected that all
+  // parameters are set in the UI and have been retrieved in params
+  if (params.type == Graph.TYPE_RANDOM) {
+    params.type=randomInt(1,5);
 
-  switch (params.type) {
+    switch (params.type) {
     case Graph.TYPE_POLAR:
       params.type=Graph.TYPE_POLAR;
       params.nb_orbits=randomInt(2,11);
       params.nb_nodes_per_orbit=randomInt(4,13);
-      graph=new Graph(Graph.TYPE_POLAR,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.nb_nodes_per_orbit,
-                         params.nb_orbits);
-      break;
+//      graph=new Graph(Graph.TYPE_POLAR,
+//                           params.margin,
+//                           params.margin,
+//                           WIDTH-2*params.margin,
+//                           HEIGHT-2*params.margin,
+//                           params.nb_nodes_per_orbit,
+//                           params.nb_orbits);
+    break;
     case Graph.TYPE_TGRID:
       params.type=Graph.TYPE_TGRID;
       params.shape1=-randomFloat(0.3, 1.2);
       params.shape2=-randomFloat(0.3, 1.2);
       params.edge_size=randomFloat(50,90);
-      graph=new Graph(params.type,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.edge_size,
-                         0);
-      break;
+//      graph=new Graph(params.type,
+//                      params.margin,
+//                      params.margin,
+//                      WIDTH-2*params.margin,
+//                      HEIGHT-2*params.margin,
+//                      params.edge_size,
+//                      0);
+    break;
     case Graph.TYPE_KENNICOTT:
       params.type=Graph.TYPE_KENNICOTT;
       params.shape1=randomFloat(-1,1);
       params.shape2=randomFloat(-1,1);
       params.edge_size=randomFloat(70,90);
       params.cluster_size=params.edge_size/randomFloat(3,12)-1;
-      graph=new Graph(params.type,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.edge_size,
-                         params.cluster_size);
-      break;
+//      graph=new Graph(params.type,
+//                      params.margin,
+//                      params.margin,
+//                      WIDTH-2*params.margin,
+//                      HEIGHT-2*params.margin,
+//                      params.edge_size,
+//                      params.cluster_size);
+    break;
     case Graph.TYPE_TRIANGLE:
       params.type=Graph.TYPE_TRIANGLE;
       params.edge_size=randomFloat(60,100);
       params.margin=randomFloat(-900,0);
-      graph=new Graph (Graph.TYPE_TRIANGLE,
-                          params.margin,
-                          params.margin,
-                          WIDTH-2*params.margin,
-                          HEIGHT-2*params.margin,
-                          params.edge_size,
-                          0);
-      break;
+//      graph=new Graph (Graph.TYPE_TRIANGLE,
+//                       params.margin,
+//                       params.margin,
+//                       WIDTH-2*params.margin,
+//                       HEIGHT-2*params.margin,
+//                       params.edge_size,
+//                       0);
+    break;
     case Graph.TYPE_CUSTOM:
       params.type=Graph.TYPE_CUSTOM;
       params.nb_orbits=randomInt(2,11);
       params.nb_nodes_per_orbit=randomInt(4,13);
-      graph=new Graph(Graph.TYPE_CUSTOM,
-                         params.margin,
-                         params.margin,
-                         WIDTH-2*params.margin,
-                         HEIGHT-2*params.margin,
-                         params.nb_nodes_per_orbit,
-                         params.nb_orbits);
-      break;
+//      graph=new Graph(Graph.TYPE_CUSTOM,
+//                      params.margin,
+//                      params.margin,
+//                      WIDTH-2*params.margin,
+//                      HEIGHT-2*params.margin,
+//                      params.nb_nodes_per_orbit,
+//                      params.nb_orbits);
+    break;
     default: print("error: graph type out of bounds: "+params.type);
     }
 
-  graph.rotate(graphRotationAngle,WIDTH/2,HEIGHT/2);
-//  print("Graph: "+graph);
-
-  pattern=new Pattern(this, graph, params.shape1, params.shape2);
-  pattern.make_curves();
+  }
+  this.graph = new Graph(params);
+  this.graph.rotate(this.graphRotationAngle,WIDTH/2,HEIGHT/2);
+  this.pattern=new Pattern(this, this.graph, params.shape1, params.shape2);
+  this.pattern.make_curves();
   t = 0.0;
 
 
@@ -917,8 +915,8 @@ function setup(params)
 
 function draw() {
   var c; //color
-  var step = st.getParams().getStep();
-  var delay = st.getParams().getDelay();
+  var step = st.getParams().step;
+  var delay = st.getParams().delay;
   var splines = st.getPattern().getSplines();
   var t=0;
   var t2;
@@ -955,11 +953,7 @@ function print(text)
 
 this.main = function(params)
 {
-  var fullParams = new Params();
-  fullParams.type = params.type;
-  fullParams.shape1 = params.shape1;
-  fullParams.shape2 = params.shape2;
-  setup(fullParams);
+  setup(params);
   draw();
 }
 
