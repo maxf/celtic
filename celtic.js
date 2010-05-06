@@ -222,7 +222,6 @@ function Graph(params) {
     this.nodes.push(node);
     //    print("Adding: "+n+"\n");
   };
-
   switch (this.params.type) {
   case Graph.TYPE_POLAR:
     var nbp=this.params.nb_nodes_per_orbit | 0; // number of points on each orbit
@@ -255,33 +254,33 @@ function Graph(params) {
     break;
 
   case Graph.TYPE_TRIANGLE:
-    var edge_size=this.params.triangle_edge_size;;
+    var edge_size=this.params.triangle_edge_size;
     var L=(this.width<this.height?this.width:this.height)/2.0; // circumradius of the triangle
     cx=(this.xmin+this.width/2.0); cy=(this.ymin+this.height/2.0); /* centre of the triangle */
     var p2x=(cx-L*SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
-    var nsteps=Math.floor(3*L/(SQRT_3*this.params.triangleedge_size)) | 0;
+    var nsteps=Math.floor(3*L/(SQRT_3*edge_size)) | 0;
     grid = new Array((nsteps+1)*(nsteps+1));
 
     // create node grid
-    for (row=0;row<=this.params.nstep;row++)
-      for (col=0;col<=this.params.nstep;col++)
-        if (row+col<=this.params.nstep) {
-          x=p2x+col*L*SQRT_3/this.params.nstep + row*L*SQRT_3/(2*this.params.nstep);
-          y=p2y-row*3*L/(2*this.params.nstep);
-          grid[col+row*(this.params.nstep+1)]=new Node(x, y);
-          this.add_node(grid[col+row*(this.params.nstep+1)]);
+    for (row=0;row<=nsteps;row++)
+      for (col=0;col<=nsteps;col++)
+        if (row+col<=nsteps) {
+          x=p2x+col*L*SQRT_3/nsteps + row*L*SQRT_3/(2*nsteps);
+          y=p2y-row*3*L/(2*nsteps);
+          grid[col+row*(nsteps+1)]=new Node(x, y);
+          this.add_node(grid[col+row*(nsteps+1)]);
         }
 
     // create edges
-    for (row=0;row<this.params.nstep;row++)
-      for (col=0;col<this.params.nstep;col++)
-        if (row+col<this.params.nstep) {
+    for (row=0;row<nsteps;row++)
+      for (col=0;col<nsteps;col++)
+        if (row+col<nsteps) {
           // horizontal edges
-          this.add_edge(new Edge(grid[row+col*(this.params.nstep+1)],grid[row+(col+1)*(this.params.nstep+1)]));
+          this.add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
           // vertical edges
-          this.add_edge(new Edge(grid[row+col*(this.params.nstep+1)],grid[row+1+col*(this.params.nstep+1)]));
+          this.add_edge(new Edge(grid[row+col*(nsteps+1)],grid[row+1+col*(nsteps+1)]));
           // diagonal edges
-          this.add_edge(new Edge(grid[row+1+col*(this.params.nstep+1)],grid[row+(col+1)*(this.params.nstep+1)]));
+          this.add_edge(new Edge(grid[row+1+col*(nsteps+1)],grid[row+(col+1)*(nsteps+1)]));
         }
     break;
 
@@ -293,7 +292,7 @@ function Graph(params) {
     // cluster_size is the length of an edge of a cluster
 
     step=this.params.kennicott_edge_size;
-    var cluster_size=this.params.cluster_size;
+    var cluster_size=this.params.kennicott_cluster_size;
     size=this.width<this.height?this.height:this.width;
     nbcol=Math.floor((1+size/step)/2*2) | 0; //@@ was (int)((1+size/step)/2*2)
     nbrow=Math.floor((1+size/step)/2*2) | 0;
@@ -802,64 +801,29 @@ function State(params)
       params.type=Graph.TYPE_POLAR;
       params.nb_orbits=randomInt(2,11);
       params.nb_nodes_per_orbit=randomInt(4,13);
-//      graph=new Graph(Graph.TYPE_POLAR,
-//                           params.margin,
-//                           params.margin,
-//                           WIDTH-2*params.margin,
-//                           HEIGHT-2*params.margin,
-//                           params.nb_nodes_per_orbit,
-//                           params.nb_orbits);
     break;
     case Graph.TYPE_TGRID:
       params.type=Graph.TYPE_TGRID;
       params.shape1=-randomFloat(0.3, 1.2);
       params.shape2=-randomFloat(0.3, 1.2);
       params.edge_size=randomFloat(50,90);
-//      graph=new Graph(params.type,
-//                      params.margin,
-//                      params.margin,
-//                      WIDTH-2*params.margin,
-//                      HEIGHT-2*params.margin,
-//                      params.edge_size,
-//                      0);
     break;
     case Graph.TYPE_KENNICOTT:
       params.type=Graph.TYPE_KENNICOTT;
       params.shape1=randomFloat(-1,1);
       params.shape2=randomFloat(-1,1);
       params.edge_size=randomFloat(70,90);
-      params.cluster_size=params.edge_size/randomFloat(3,12)-1;
-//      graph=new Graph(params.type,
-//                      params.margin,
-//                      params.margin,
-//                      WIDTH-2*params.margin,
-//                      HEIGHT-2*params.margin,
-//                      params.edge_size,
-//                      params.cluster_size);
+      params.kennicott_cluster_size=params.edge_size/randomFloat(3,12)-1;
     break;
     case Graph.TYPE_TRIANGLE:
       params.type=Graph.TYPE_TRIANGLE;
       params.edge_size=randomFloat(60,100);
       params.margin=randomFloat(-900,0);
-//      graph=new Graph (Graph.TYPE_TRIANGLE,
-//                       params.margin,
-//                       params.margin,
-//                       WIDTH-2*params.margin,
-//                       HEIGHT-2*params.margin,
-//                       params.edge_size,
-//                       0);
     break;
     case Graph.TYPE_CUSTOM:
       params.type=Graph.TYPE_CUSTOM;
       params.nb_orbits=randomInt(2,11);
       params.nb_nodes_per_orbit=randomInt(4,13);
-//      graph=new Graph(Graph.TYPE_CUSTOM,
-//                      params.margin,
-//                      params.margin,
-//                      WIDTH-2*params.margin,
-//                      HEIGHT-2*params.margin,
-//                      params.nb_nodes_per_orbit,
-//                      params.nb_orbits);
     break;
     default: print("error: graph type out of bounds: "+params.type);
     }

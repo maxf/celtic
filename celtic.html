@@ -33,9 +33,10 @@
         $('#slider-margin').slider({ value: 0, min: 0, max: 200, step: 1 });
         $('#slider-nb_orbits').slider({value:3, min:2, max:11, step:1});
         $('#slider-nb_nodes_per_orbit').slider({value:5, min:4, max:13, step:1});
-        $('#slider-triangle-edge_size').slider({value:80, min:60, max:100, step:.1});
+        $('#slider-triangle-edge_size').slider({value:80, min:20, max:200, step:.1});
+        $('#slider-tgrid-edge_size').slider({value:60, min:40, max:200, step:.1});
         $('#slider-kennicott-edge_size').slider({value:80, min:70, max:90, step:.1});
-        $('#slider-tgrid-edge_size').slider({value:60, min:50, max:90, step:.1});
+        $('#slider-kennicott-cluster_size').slider({value:10, min:5, max:30, step:.1});
 
         function main() {
           celtic.main({type: $("#tabs").tabs().tabs('option','selected'),
@@ -48,8 +49,9 @@
                        nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
                        triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
                        tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
-                       kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value')
-                       });
+                       kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
+                       kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
+                      });
         };
 
 
@@ -104,6 +106,7 @@
         <div id="tab-kennicott">
           <h2>Kennicott</h2>
           <p>Edge Length:</p><div id="slider-kennicott-edge_size" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
+          <p>Cluster Length:</p><div id="slider-kennicott-cluster_size" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"></div>
         </div>
       </div>
     </div>
