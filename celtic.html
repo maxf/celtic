@@ -39,7 +39,7 @@
         $('#slider-kennicott-edge_size').slider({value:80, min:70, max:90, step:.1});
         $('#slider-kennicott-cluster_size').slider({value:10, min:5, max:30, step:.1});
 
-        $("#go").bind("click", function(event, ui) {
+//        $("#go").bind("click", function(event, ui) {
           pattern = new Celtic({type: $("#tabs").tabs().tabs('option','selected'),
                        shape1: $('#slider-shape1').slider('value'),
                        shape2: $('#slider-shape2').slider('value'),
@@ -54,7 +54,7 @@
                        kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
                       });
           pattern.draw();
-        });
+//        });
 
         
       });

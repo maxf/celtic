@@ -1,13 +1,13 @@
+var Const = {
+  CLOCKWISE:0,
+  ANTICLOCKWISE:1,
+  SQRT_3: 1.73205080756887729352,
+  RGB: 0,
+  HSB: 1
+};
 
 var Celtic = (function() {
 
-    // private static attributes
-    var CLOCKWISE=0;
-    var ANTICLOCKWISE=1;
-    var SQRT_3 = 1.73205080756887729352;
-    var TWO_PI = 2*Math.PI;
-    var RGB = 0;
-    var HSB = 1;
 
     // private static methods
     this.randomFloat = function(min,max) {
@@ -24,9 +24,6 @@ var Celtic = (function() {
 
 
   return function(params) {
-    var step=0.01; // parameter increment for progressive rendering
-    var delay;        /* controls curve drawing speed (step delay in microsecs) */
-
     var curve_width, shadow_width; //float
     var shape1, shape2; //float
     var margin; //float
@@ -41,19 +38,22 @@ var Celtic = (function() {
     var canvas;
     var ctx;
     var width, height;
-    var colorMode = RGB; // one of RGB or HSB
+    var colorMode = Const.RGB; // one of RGB or HSB
     var r = 0;
     var g = 0;
     var b = 0;
     var st;
-    var t,t2; //float
+    var t,t2;
     var s;
     var pi1, pi2, pi3, pi4;
     var start, end; // colors
 
+    var graphRotationAngle;
+    var graph;
+
     this.color = function(a,b,c) {
       switch(this.colorMode) {
-        case this.RGB: this.r=a; this.g=b; this.b=c; break;
+        case Const.RGB: this.r=a; this.g=b; this.b=c; break;
       }
     };
 
@@ -77,7 +77,7 @@ var Celtic = (function() {
     this.circle = function(cx,cy,radius) {
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(cx,cy,radius,0,this.TWO_PI,false);
+      ctx.arc(cx,cy,radius,0,2*Math.PI,false);
       ctx.closePath();
       ctx.stroke();
     };
@@ -101,11 +101,72 @@ var Celtic = (function() {
       ctx.shadowBlur=3;
       ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
       width = canvas.width;
-      height=canvas.height;
+      height = canvas.height;
       ctx.fillRect(0,0,width,width);
-      st=new State(params);
+      graphRotationAngle = randomFloat(0,2*Math.PI);
+
+      this.delay = 100; // step delay in microsecs
+      this.step=0.01; // parameter increment for progressive rendering
+
+
+
+
+      curve_width=randomFloat(4,10);
+      shadow_width=params.curve_width+4;
+      //  shape1=randomFloat(.5,2);
+      //  shape2=randomFloat(.5,2);
+
+      // if the type is random, then we pick one other type and compute
+      // its parameter randomly. Otherwise it is expected that all
+      // parameters are set in the UI and have been retrieved in params
+      if (params.type == Graph.TYPE_RANDOM) {
+        params.type=randomInt(1,5);
+
+        switch (params.type) {
+        case Graph.TYPE_POLAR:
+          params.nb_orbits=randomInt(2,11);
+          params.nb_nodes_per_orbit=randomInt(4,13);
+        break;
+        case Graph.TYPE_TGRID:
+          params.shape1=-randomFloat(0.3, 1.2);
+          params.shape2=-randomFloat(0.3, 1.2);
+          params.edge_size=randomFloat(50,90);
+        break;
+        case Graph.TYPE_KENNICOTT:
+          params.shape1=randomFloat(-1,1);
+          params.shape2=randomFloat(-1,1);
+          params.edge_size=randomFloat(70,90);
+          params.kennicott_cluster_size=params.edge_size/randomFloat(3,12)-1;
+        break;
+        case Graph.TYPE_TRIANGLE:
+          params.edge_size=randomFloat(60,100);
+          params.margin=randomFloat(-900,0);
+        break;
+        case Graph.TYPE_CUSTOM:
+          params.nb_orbits=randomInt(2,11);
+          params.nb_nodes_per_orbit=randomInt(4,13);
+        break;
+        default: print("error: graph type out of bounds: "+this.params.type);
+        }
+      }
+      graph = new Graph(params);
+      graph.rotate(graphRotationAngle,width/2,height/2);
+      this.pattern=new Pattern(graph, shape1, shape2);
+      this.pattern.make_curves();
+      t = 0.0;
+
+      //  if (pattern.splines.length==1) {
+      colorMode = Const.HSB;
+      this.color(randomInt(0,256), 200, 200);
+//      start=color(randomInt(0,256), 200, 200);
+//      end=color(randomInt(0,256), 200, 200);
+      //  }
+      this.strokeWeight(params.curve_width);
+      //  stroke(0,0,0);
+      //graph.draw();
+      //  print(graph);
     } else {
-      print("canvas not supported");
+      this.print("canvas not supported");
     }
   };
 })();
@@ -115,26 +176,26 @@ var Celtic = (function() {
 Celtic.prototype = {
     draw: function() {
       var c; //color
-      var step = st.getParams().step;
-      var delay = st.getParams().delay;
-      var splines = st.getPattern().getSplines();
+      var splines = this.pattern.getSplines();
       var t=0;
       var t2;
       var intervalId;
-      intervalId = setInterval(drawOneStep,delay);
-
+      var step=this.step;
+      var ctx = this.ctx;
+      var pi1=this.pi1;
+      var pi2=this.pi2;
+      intervalId = setInterval(drawOneStep,this.delay);
       function drawOneStep() {
         if(t>=1.0) clearInterval(intervalId);
         else {
           t2 = (t+step>1.0) ? 1.0 : t+step;
 
           for (var i=0;i<splines.length;i++) {
-            this.s=splines[i];
-
+            var s=splines[i];
             if (s != null) { // skip if one-point spline
               this.ctx.strokeStyle="rgb("+s.getRed()+","+s.getGreen()+","+s.getBlue()+")";
-              this.pi1=s.value_at(t);
-              this.pi2=s.value_at(t2);
+              pi1=s.value_at(t);
+              pi2=s.value_at(t2);
               var p1=pi1.getPoint(), p2=pi2.getPoint();
               line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
             }
@@ -153,9 +214,9 @@ function Edge(n1,n2) {
   var node2 = n2;
 
   var angle1=Math.atan2(n2.getY() - n1.getY(), n2.getX() - n1.getX());
-  if (angle1 < 0) angle1+=TWO_PI;
+  if (angle1 < 0) angle1+=2*Math.PI;
   var angle2=Math.atan2(n1.getY() - n2.getY(), n1.getX() - n2.getX());
-  if (angle2 < 0) angle2+=TWO_PI;
+  if (angle2 < 0) angle2+=2*Math.PI;
 
   // Accessors
   this.getNode1 = function() { return node1; };
@@ -188,7 +249,7 @@ function Edge(n1,n2) {
      "node" following "direction" */
     var a;
 
-    if (direction===CLOCKWISE)
+    if (direction===Const.CLOCKWISE)
       a=this.angle(node) - e2.angle(node);
     else
       a=e2.angle(node) - this.angle(node);
@@ -214,8 +275,8 @@ function EdgeCouple(nb_edges)
   // constructor
   for (var i=0;i<size;i++) {
     array[i] = new Array(2);
-    array[i][CLOCKWISE] = 0;
-    array[i][ANTICLOCKWISE] = 0;
+    array[i][Const.CLOCKWISE] = 0;
+    array[i][Const.ANTICLOCKWISE] = 0;
   }
 }
 
@@ -281,8 +342,8 @@ function Graph(params) {
 
     for (o=0;o<nbo;o++)
       for (p=0;p<nbp;p++)
-        this.add_node(grid[1+o*nbp+p]=new Node(cx+(o+1)*os*Math.sin(p*TWO_PI/nbp),
-                                          cy+(o+1)*os*Math.cos(p*TWO_PI/nbp)));
+        this.add_node(grid[1+o*nbp+p]=new Node(cx+(o+1)*os*Math.sin(p*2*Math.PI/nbp),
+                                          cy+(o+1)*os*Math.cos(p*2*Math.PI/nbp)));
 
     // generate edges
     for (o=0;o<nbo;o++)
@@ -302,15 +363,15 @@ function Graph(params) {
     var edge_size=this.params.triangle_edge_size;
     var L=(this.width<this.height?this.width:this.height)/2.0; // circumradius of the triangle
     cx=(this.xmin+this.width/2.0); cy=(this.ymin+this.height/2.0); /* centre of the triangle */
-    var p2x=(cx-L*SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
-    var nsteps=Math.floor(3*L/(SQRT_3*edge_size)) | 0;
+    var p2x=(cx-L*Const.SQRT_3/2.0), p2y=(cy+L/2.0); /* p2 is the bottom left vertex */
+    var nsteps=Math.floor(3*L/(Const.SQRT_3*edge_size)) | 0;
     grid = new Array((nsteps+1)*(nsteps+1));
 
     // create node grid
     for (row=0;row<=nsteps;row++)
       for (col=0;col<=nsteps;col++)
         if (row+col<=nsteps) {
-          x=p2x+col*L*SQRT_3/nsteps + row*L*SQRT_3/(2*nsteps);
+          x=p2x+col*L*Const.SQRT_3/nsteps + row*L*Const.SQRT_3/(2*nsteps);
           y=p2y-row*3*L/(2*nsteps);
           grid[col+row*(nsteps+1)]=new Node(x, y);
           this.add_node(grid[col+row*(nsteps+1)]);
@@ -541,7 +602,7 @@ function Node(new_x, new_y)
 
 
 // A Pattern is a set of closed curves that form a motif
-function Pattern(new_st, new_g, new_shape1, new_shape2) {
+function Pattern(new_g, new_shape1, new_shape2) {
   var splines = [];
   var shape1=new_shape1;
   var shape2=new_shape2;
@@ -601,7 +662,7 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
     var i1x,i1y,i2x,i2y,x2,y2,x3,y3;
 
     switch(direction) {
-    case ANTICLOCKWISE:
+    case Const.ANTICLOCKWISE:
       // (i1x,i2x) must stick out to the left of NP1 and I2 to the right of NP4
       i1x =  alpha*(node.getY()-y1)+x1;
       i1y = -alpha*(node.getX()-x1)+y1;
@@ -612,7 +673,7 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
       x3 = -beta*(y4-i2y) + i2x;
       y3 =  beta*(x4-i2x) + i2y;
       break;
-    case CLOCKWISE:
+    case Const.CLOCKWISE:
       // I1 must stick out to the left of NP1 and I2 to the right of NP4
       i1x = -alpha*(node.getY()-y1)+x1;
       i1y =  alpha*(node.getX()-x1)+y1;
@@ -635,12 +696,12 @@ function Pattern(new_st, new_g, new_shape1, new_shape2) {
   {
     var ed=null; //EdgeDirection
     for (var i=0;i<ec.getSize();i++) {
-      if (ec.getArray()[i][CLOCKWISE]==0) {
-        ed = new EdgeDirection(graph.edges[i], CLOCKWISE);
+      if (ec.getArray()[i][Const.CLOCKWISE]==0) {
+        ed = new EdgeDirection(graph.edges[i], Const.CLOCKWISE);
         return ed;
       }
-      else if (ec.getArray()[i][ANTICLOCKWISE]==0) {
-        ed = new EdgeDirection(graph.edges[i], ANTICLOCKWISE);
+      else if (ec.getArray()[i][Const.ANTICLOCKWISE]==0) {
+        ed = new EdgeDirection(graph.edges[i], Const.ANTICLOCKWISE);
         return ed;
       }
     }
@@ -808,82 +869,6 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 }
 
 //================================================================================
-
-function State(params)
-{
-  this.params = params;
-
-  this.graphRotationAngle = randomFloat(0,2*Math.PI);
-
-  this.getStep = function() { return this.step; };
-  this.getPattern = function() { return this.pattern; };
-  this.getGraph = function() { return this.graph; };
-  this.getParams = function() { return this.params; };
-  this.getGraphRotationAngle = function() { return this.graphRotationAngle; };
-
-  // Constructor
-  this.params.curve_width=randomFloat(4,10);
-  this.params.shadow_width=params.curve_width+4;
-  //  this.params.shape1=randomFloat(.5,2);
-  //  this.params.shape2=randomFloat(.5,2);
-
-  // if the type is random, then we pick one other type and compute
-  // its parameter randomly. Otherwise it is expected that all
-  // parameters are set in the UI and have been retrieved in params
-  if (this.params.type == Graph.TYPE_RANDOM) {
-    this.params.type=randomInt(1,5);
-
-    switch (this.params.type) {
-    case Graph.TYPE_POLAR:
-      this.params.type=Graph.TYPE_POLAR;
-      this.params.nb_orbits=randomInt(2,11);
-      this.params.nb_nodes_per_orbit=randomInt(4,13);
-    break;
-    case Graph.TYPE_TGRID:
-      this.params.type=Graph.TYPE_TGRID;
-      this.params.shape1=-randomFloat(0.3, 1.2);
-      this.params.shape2=-randomFloat(0.3, 1.2);
-      this.params.edge_size=randomFloat(50,90);
-    break;
-    case Graph.TYPE_KENNICOTT:
-      this.params.type=Graph.TYPE_KENNICOTT;
-      this.params.shape1=randomFloat(-1,1);
-      this.params.shape2=randomFloat(-1,1);
-      this.params.edge_size=randomFloat(70,90);
-      this.params.kennicott_cluster_size=this.params.edge_size/randomFloat(3,12)-1;
-    break;
-    case Graph.TYPE_TRIANGLE:
-      this.params.type=Graph.TYPE_TRIANGLE;
-      this.params.edge_size=randomFloat(60,100);
-      this.params.margin=randomFloat(-900,0);
-    break;
-    case Graph.TYPE_CUSTOM:
-      this.params.type=Graph.TYPE_CUSTOM;
-      this.params.nb_orbits=randomInt(2,11);
-      this.params.nb_nodes_per_orbit=randomInt(4,13);
-    break;
-    default: print("error: graph type out of bounds: "+this.params.type);
-    }
-
-  }
-  this.graph = new Graph(params);
-  this.graph.rotate(this.graphRotationAngle,this.params.width/2,this.params.height/2);
-  this.pattern=new Pattern(this, this.graph, params.shape1, params.shape2);
-  this.pattern.make_curves();
-  t = 0.0;
-
-
-  //  if (pattern.splines.length==1) {
-    this.colorMode = (HSB);
-    start=color(randomInt(0,256), 200, 200);
-    end=color(randomInt(0,256), 200, 200);
-    //  }
-  strokeWeight(params.curve_width);
-  //  stroke(0,0,0);
-  //graph.draw();
-  //  print(graph);
-
-};
 
 
 
