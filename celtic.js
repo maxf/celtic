@@ -1,104 +1,149 @@
-var Celtic = function()
-{
-function Params()
-{
-  this.step=0.01; // parameter increment for progressive rendering
-  var delay;        /* controls curve drawing speed (step delay in microsecs) */
 
-  var curve_width, shadow_width; //float
-  var shape1, shape2; //float
-  var margin; //float
-  var type; // int. one of Graph.TYPE_*
-  var triangle_edge_size;
-  var tgrid_edge_size;
-  var kennicott_edge_size;
-  var cluster_size; /* only used if type is kennicott */
-  var nb_orbits;          /* only used if type is polar */
-  var nb_nodes_per_orbit; /* only used if type is polar */
-  var angle; /* angle of rotation of the graph around the centre */
+var Celtic = (function() {
 
-  this.getShape1 = function() { return shape1; };
-  this.getShape2 = function() { return shape2; };
-  this.getStep = function() { return this.step; };
-  this.getDelay = function() { return delay; };
-  this.getAngle = function() { return angle; };
-  this.setAngle = function(newAngle) { angle=newAngle; };
+    // private static attributes
+    var CLOCKWISE=0;
+    var ANTICLOCKWISE=1;
+    var SQRT_3 = 1.73205080756887729352;
+    var TWO_PI = 2*Math.PI;
+    var RGB = 0;
+    var HSB = 1;
+
+    // private static methods
+    this.randomFloat = function(min,max) {
+      // return a number in [min, max[
+      // <http://processing.org/reference/random_.html>
+      return Math.random()*(max-min) + min;
+    };
+
+    this.randomInt = function(min,max)
+    {
+      return Math.floor(Math.random()*(max-min) + min) | 0;
+    };
+
+
+
+  return function(params) {
+    var step=0.01; // parameter increment for progressive rendering
+    var delay;        /* controls curve drawing speed (step delay in microsecs) */
+
+    var curve_width, shadow_width; //float
+    var shape1, shape2; //float
+    var margin; //float
+    var type; // int. one of Graph.TYPE_*
+    var triangle_edge_size;
+    var tgrid_edge_size;
+    var kennicott_edge_size;
+    var cluster_size; /* only used if type is kennicott */
+    var nb_orbits;          /* only used if type is polar */
+    var nb_nodes_per_orbit; /* only used if type is polar */
+    var angle; /* angle of rotation of the graph around the centre */
+    var canvas;
+    var ctx;
+    var width, height;
+    var colorMode = RGB; // one of RGB or HSB
+    var r = 0;
+    var g = 0;
+    var b = 0;
+    var st;
+    var t,t2; //float
+    var s;
+    var pi1, pi2, pi3, pi4;
+    var start, end; // colors
+
+    this.color = function(a,b,c) {
+      switch(this.colorMode) {
+        case this.RGB: this.r=a; this.g=b; this.b=c; break;
+      }
+    };
+
+    // <http://processing.org/reference/strokeWeight_.html>
+    this.strokeWeight = function(weight) {
+      ctx.lineWidth = weight;
+    };
+
+    // <http://processing.org/reference/line_.html>
+    this.line = function(x1,y1, x2,y2) {
+      //  ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
+      //  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.closePath();
+      ctx.stroke();
+    };
+
+
+    this.circle = function(cx,cy,radius) {
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx,cy,radius,0,this.TWO_PI,false);
+      ctx.closePath();
+      ctx.stroke();
+    };
+
+
+    this.print = function(text) {
+      if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
+      else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
+    };
+
+
+    // constructor code
+    canvas = document.getElementById("canvas");
+    if (canvas) {
+      ctx = canvas.getContext("2d");
+      ctx.lineJoin="round";
+      ctx.lineCap="round";
+      ctx.shadowColor="rgba(0,0,0,.5)";
+      ctx.shadowOffsetX=5;
+      ctx.shadowOffsetY=5;
+      ctx.shadowBlur=3;
+      ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
+      width = canvas.width;
+      height=canvas.height;
+      ctx.fillRect(0,0,width,width);
+      st=new State(params);
+    } else {
+      print("canvas not supported");
+    }
+  };
+})();
+
+
+// public methods
+Celtic.prototype = {
+    draw: function() {
+      var c; //color
+      var step = st.getParams().step;
+      var delay = st.getParams().delay;
+      var splines = st.getPattern().getSplines();
+      var t=0;
+      var t2;
+      var intervalId;
+      intervalId = setInterval(drawOneStep,delay);
+
+      function drawOneStep() {
+        if(t>=1.0) clearInterval(intervalId);
+        else {
+          t2 = (t+step>1.0) ? 1.0 : t+step;
+
+          for (var i=0;i<splines.length;i++) {
+            this.s=splines[i];
+
+            if (s != null) { // skip if one-point spline
+              this.ctx.strokeStyle="rgb("+s.getRed()+","+s.getGreen()+","+s.getBlue()+")";
+              this.pi1=s.value_at(t);
+              this.pi2=s.value_at(t2);
+              var p1=pi1.getPoint(), p2=pi2.getPoint();
+              line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
+            }
+          }
+          t=t2;
+        }
+      }
+    }
 };
-
-//================================================================================
-
-
-var g_canvas = document.getElementById("canvas");
-var g_ctx;
-if (g_canvas) {
-  g_ctx = g_canvas.getContext("2d");
-  g_ctx.lineJoin="round";
-  g_ctx.lineCap="round";
-
-  g_ctx.shadowColor="rgba(0,0,0,.5)";
-  g_ctx.shadowOffsetX=5;
-  g_ctx.shadowOffsetY=5;
-  g_ctx.shadowBlur=3;
-}
-
-const WIDTH=document.getElementById("canvas").width;
-const HEIGHT=document.getElementById("canvas").height;
-const CLOCKWISE=0;
-const ANTICLOCKWISE=1;
-const SQRT_3 = 1.73205080756887729352;
-const PI = Math.PI;
-const TWO_PI = 2*PI;
-
-//================================================================================
-
-const RGB = 0;
-const HSB = 1;
-var _colorMode = RGB; // one of RGB or HSB
-var r = 0;
-var g = 0;
-var b = 0;
-
-// return a number in [min, max[
-// <http://processing.org/reference/random_.html>
-function randomFloat(min,max)
-{
-  return Math.random()*(max-min) + min;
-};
-
-function randomInt(min,max)
-{
-  return Math.floor(Math.random()*(max-min) + min) | 0;
-};
-
-function colorMode(mode)
-{
-  _colorMode=mode;
-};
-
-function color(a,b,c)
-{
-  switch(this._colorMode) {
-    case this.RGB: this.r=a; this.g=b; this.b=c; break;
-  }
-};
-
-// <http://processing.org/reference/strokeWeight_.html>
-function strokeWeight(weight)
-{
-  g_ctx.lineWidth = weight;
-};
-
-// <http://processing.org/reference/line_.html>
-function line(x1,y1, x2,y2)
-{
-//  g_ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
-//  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
-  g_ctx.beginPath();
-  g_ctx.moveTo(x1,y1);
-  g_ctx.lineTo(x2,y2);
-  g_ctx.closePath();
-  g_ctx.stroke();
-}
 
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -148,7 +193,7 @@ function Edge(n1,n2) {
     else
       a=e2.angle(node) - this.angle(node);
 
-    if (a<0) return a+2*PI; else return a;
+    if (a<0) return a+2*Math.PI; else return a;
   };
 
 
@@ -199,8 +244,8 @@ function Graph(params) {
 
   this.xmin = this.params.margin;
   this.ymin = this.params.margin;
-  this.width = WIDTH - 2*this.params.margin;
-  this.height = HEIGHT - 2*this.params.margin;
+  this.width = this.params.width - 2*this.params.margin;
+  this.height = this.params.height - 2*this.params.margin;
   this.nodes = [];
   this.edges = [];
 
@@ -421,7 +466,7 @@ return next_edge;
 Graph.prototype.draw = function()
 {
   var i;
-  g_ctx.strokeStyle = "rgb(0,0,0)";
+  ctx.strokeStyle = "rgb(0,0,0)";
   for (i=0;i<this.nodes.length;i++) this.nodes[i].draw();
   for (i=0;i<this.edges.length;i++) this.edges[i].draw();
 };
@@ -680,7 +725,7 @@ function Spline(new_red,new_green,new_blue) {
 
 //    var cssColorString="rgb("+red+","+green+","+blue+")";
 //    print("new Spline: "+cssColorString)
-//    g_ctx.strokeStyle=cssColorString;
+//    ctx.strokeStyle=cssColorString;
 
   // accessors
   this.getSegments = function() { return segments; };
@@ -768,15 +813,7 @@ function State(params)
 {
   this.params = params;
 
-
-//  var showGraph; //Boolean
-//  var pattern;
-//  var graph;
-//  var width, height;
-//  var delay2;
-//  var reset;
-//  var t;
-  this.graphRotationAngle = randomFloat(0,2*PI);
+  this.graphRotationAngle = randomFloat(0,2*Math.PI);
 
   this.getStep = function() { return this.step; };
   this.getPattern = function() { return this.pattern; };
@@ -785,59 +822,59 @@ function State(params)
   this.getGraphRotationAngle = function() { return this.graphRotationAngle; };
 
   // Constructor
-  params.curve_width=randomFloat(4,10);
-  params.shadow_width=params.curve_width+4;
-  //  params.shape1=randomFloat(.5,2);
-  //  params.shape2=randomFloat(.5,2);
+  this.params.curve_width=randomFloat(4,10);
+  this.params.shadow_width=params.curve_width+4;
+  //  this.params.shape1=randomFloat(.5,2);
+  //  this.params.shape2=randomFloat(.5,2);
 
   // if the type is random, then we pick one other type and compute
   // its parameter randomly. Otherwise it is expected that all
   // parameters are set in the UI and have been retrieved in params
-  if (params.type == Graph.TYPE_RANDOM) {
-    params.type=randomInt(1,5);
+  if (this.params.type == Graph.TYPE_RANDOM) {
+    this.params.type=randomInt(1,5);
 
-    switch (params.type) {
+    switch (this.params.type) {
     case Graph.TYPE_POLAR:
-      params.type=Graph.TYPE_POLAR;
-      params.nb_orbits=randomInt(2,11);
-      params.nb_nodes_per_orbit=randomInt(4,13);
+      this.params.type=Graph.TYPE_POLAR;
+      this.params.nb_orbits=randomInt(2,11);
+      this.params.nb_nodes_per_orbit=randomInt(4,13);
     break;
     case Graph.TYPE_TGRID:
-      params.type=Graph.TYPE_TGRID;
-      params.shape1=-randomFloat(0.3, 1.2);
-      params.shape2=-randomFloat(0.3, 1.2);
-      params.edge_size=randomFloat(50,90);
+      this.params.type=Graph.TYPE_TGRID;
+      this.params.shape1=-randomFloat(0.3, 1.2);
+      this.params.shape2=-randomFloat(0.3, 1.2);
+      this.params.edge_size=randomFloat(50,90);
     break;
     case Graph.TYPE_KENNICOTT:
-      params.type=Graph.TYPE_KENNICOTT;
-      params.shape1=randomFloat(-1,1);
-      params.shape2=randomFloat(-1,1);
-      params.edge_size=randomFloat(70,90);
-      params.kennicott_cluster_size=params.edge_size/randomFloat(3,12)-1;
+      this.params.type=Graph.TYPE_KENNICOTT;
+      this.params.shape1=randomFloat(-1,1);
+      this.params.shape2=randomFloat(-1,1);
+      this.params.edge_size=randomFloat(70,90);
+      this.params.kennicott_cluster_size=this.params.edge_size/randomFloat(3,12)-1;
     break;
     case Graph.TYPE_TRIANGLE:
-      params.type=Graph.TYPE_TRIANGLE;
-      params.edge_size=randomFloat(60,100);
-      params.margin=randomFloat(-900,0);
+      this.params.type=Graph.TYPE_TRIANGLE;
+      this.params.edge_size=randomFloat(60,100);
+      this.params.margin=randomFloat(-900,0);
     break;
     case Graph.TYPE_CUSTOM:
-      params.type=Graph.TYPE_CUSTOM;
-      params.nb_orbits=randomInt(2,11);
-      params.nb_nodes_per_orbit=randomInt(4,13);
+      this.params.type=Graph.TYPE_CUSTOM;
+      this.params.nb_orbits=randomInt(2,11);
+      this.params.nb_nodes_per_orbit=randomInt(4,13);
     break;
-    default: print("error: graph type out of bounds: "+params.type);
+    default: print("error: graph type out of bounds: "+this.params.type);
     }
 
   }
   this.graph = new Graph(params);
-  this.graph.rotate(this.graphRotationAngle,WIDTH/2,HEIGHT/2);
+  this.graph.rotate(this.graphRotationAngle,this.params.width/2,this.params.height/2);
   this.pattern=new Pattern(this, this.graph, params.shape1, params.shape2);
   this.pattern.make_curves();
   t = 0.0;
 
 
   //  if (pattern.splines.length==1) {
-    colorMode(HSB);
+    this.colorMode = (HSB);
     start=color(randomInt(0,256), 200, 200);
     end=color(randomInt(0,256), 200, 200);
     //  }
@@ -850,79 +887,3 @@ function State(params)
 
 
 
-//===========================================================================
-
-function circle(cx,cy,radius)
-{
-  g_ctx.lineWidth = 2;
-  g_ctx.beginPath();
-  g_ctx.arc(cx,cy,radius,0,TWO_PI,false);
-  g_ctx.closePath();
-  g_ctx.stroke();
-}
-
-//===========================================================================
-
-var st;
-var t,t2; //float
-var s;
-var pi1, pi2, pi3, pi4;
-var start, end; // colors
-
-function setup(params)
-{
-  st=new State(params);
-  g_ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
-  g_ctx.fillRect(0,0,WIDTH,WIDTH);
-//  st.getGraph().draw();
-}
-
-function draw() {
-  var c; //color
-  var step = st.getParams().step;
-  var delay = st.getParams().delay;
-  var splines = st.getPattern().getSplines();
-  var t=0;
-  var t2;
-  var intervalId;
-  intervalId = setInterval(drawOneStep,delay);
-
-  function drawOneStep() {
-    if(t>=1.0) clearInterval(intervalId);
-    else {
-      t2 = (t+step>1.0) ? 1.0 : t+step;
-
-      for (var i=0;i<splines.length;i++) {
-        s=splines[i];
-
-        if (s != null) { // skip if one-point spline
-          g_ctx.strokeStyle="rgb("+s.getRed()+","+s.getGreen()+","+s.getBlue()+")";
-          pi1=s.value_at(t);
-          pi2=s.value_at(t2);
-          var p1=pi1.getPoint(), p2=pi2.getPoint();
-          line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
-        }
-      }
-      t=t2;
-    }
-  }
-}
-
-function print(text)
-{
-  if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
-  else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
-}
-
-
-this.main = function(params)
-{
-  setup(params);
-  draw();
-}
-
-//g_canvas.addEventListener('click',main,false);
-//main();
-
-
-};
