@@ -22,21 +22,10 @@ var Celtic = (function() {
     };
 
 
-
   return function(params) {
     var curve_width, shadow_width; //float
-    var shape1, shape2; //float
-    var margin; //float
-    var type; // int. one of Graph.TYPE_*
-    var triangle_edge_size;
-    var tgrid_edge_size;
-    var kennicott_edge_size;
-    var cluster_size; /* only used if type is kennicott */
-    var nb_orbits;          /* only used if type is polar */
-    var nb_nodes_per_orbit; /* only used if type is polar */
     var angle; /* angle of rotation of the graph around the centre */
     var canvas;
-    var ctx;
     var width, height;
     var colorMode = Const.RGB; // one of RGB or HSB
     var r = 0;
@@ -48,7 +37,8 @@ var Celtic = (function() {
     var pi1, pi2, pi3, pi4;
     var start, end; // colors
 
-    var graphRotationAngle;
+    var graphRotationAngle = 0;//randomFloat(0,2*Math.PI);
+;
     var graph;
 
     this.color = function(a,b,c) {
@@ -57,64 +47,28 @@ var Celtic = (function() {
       }
     };
 
-    // <http://processing.org/reference/strokeWeight_.html>
-    this.strokeWeight = function(weight) {
-      ctx.lineWidth = weight;
-    };
-
-    // <http://processing.org/reference/line_.html>
-    this.line = function(x1,y1, x2,y2) {
-      //  ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
-      //  print("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
-      ctx.beginPath();
-      ctx.moveTo(x1,y1);
-      ctx.lineTo(x2,y2);
-      ctx.closePath();
-      ctx.stroke();
-    };
-
-
-    this.circle = function(cx,cy,radius) {
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(cx,cy,radius,0,2*Math.PI,false);
-      ctx.closePath();
-      ctx.stroke();
-    };
-
-
-    this.print = function(text) {
-      if (navigator.userAgent.indexOf("Opera")!=-1) opera.postError(text);
-      else if (navigator.userAgent.indexOf("Mozilla")!=-1) console.log(text);
-    };
-
-
     // constructor code
     canvas = document.getElementById("canvas");
     if (canvas) {
-      ctx = canvas.getContext("2d");
-      ctx.lineJoin="round";
-      ctx.lineCap="round";
-      ctx.shadowColor="rgba(0,0,0,.5)";
-      ctx.shadowOffsetX=5;
-      ctx.shadowOffsetY=5;
-      ctx.shadowBlur=3;
-      ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
+      this.ctx = canvas.getContext("2d");
+      this.ctx.lineJoin="round";
+      this.ctx.lineCap="round";
+      this.ctx.shadowColor="rgba(0,0,0,.5)";
+      this.ctx.shadowOffsetX=5;
+      this.ctx.shadowOffsetY=5;
+      this.ctx.shadowBlur=3;
       width = canvas.width;
       height = canvas.height;
-      ctx.fillRect(0,0,width,width);
-      graphRotationAngle = randomFloat(0,2*Math.PI);
+      this.delay = 50; // step delay in microsecs
+      this.step=0.001; // parameter increment for progressive rendering
 
-      this.delay = 100; // step delay in microsecs
-      this.step=0.01; // parameter increment for progressive rendering
-
-
+      // random colour background
+      this.ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
+      this.ctx.fillRect(0,0,width,height);
 
 
       curve_width=randomFloat(4,10);
-      shadow_width=params.curve_width+4;
-      //  shape1=randomFloat(.5,2);
-      //  shape2=randomFloat(.5,2);
+      shadow_width=curve_width+4;
 
       // if the type is random, then we pick one other type and compute
       // its parameter randomly. Otherwise it is expected that all
@@ -146,14 +100,20 @@ var Celtic = (function() {
           params.nb_orbits=randomInt(2,11);
           params.nb_nodes_per_orbit=randomInt(4,13);
         break;
-        default: print("error: graph type out of bounds: "+this.params.type);
+        default: console.log("error: graph type out of bounds: "+this.params.type);
         }
       }
-      graph = new Graph(params);
+      var graphParams = params;
+      graphParams.width = width;
+      graphParams.height = height;
+      graph = new Graph(graphParams);
       graph.rotate(graphRotationAngle,width/2,height/2);
-      this.pattern=new Pattern(graph, shape1, shape2);
+      this.pattern=new Pattern(graph, params.shape1, params.shape2);
       this.pattern.make_curves();
-      t = 0.0;
+
+      graph.draw(this.ctx);
+      this.pattern.draw(this.ctx);
+//      console.log(this.pattern.toString());
 
       //  if (pattern.splines.length==1) {
       colorMode = Const.HSB;
@@ -161,12 +121,12 @@ var Celtic = (function() {
 //      start=color(randomInt(0,256), 200, 200);
 //      end=color(randomInt(0,256), 200, 200);
       //  }
-      this.strokeWeight(params.curve_width);
+      this.ctx.lineWidth = curve_width;
       //  stroke(0,0,0);
       //graph.draw();
-      //  print(graph);
+      //  console.log(graph);
     } else {
-      this.print("canvas not supported");
+      console.log("canvas not supported");
     }
   };
 })();
@@ -175,29 +135,25 @@ var Celtic = (function() {
 // public methods
 Celtic.prototype = {
     draw: function() {
-      var c; //color
-      var splines = this.pattern.getSplines();
+      var that=this;
       var t=0;
-      var t2;
-      var intervalId;
-      var step=this.step;
-      var ctx = this.ctx;
-      var pi1=this.pi1;
-      var pi2=this.pi2;
-      intervalId = setInterval(drawOneStep,this.delay);
+      var intervalId = setInterval(drawOneStep,this.delay);
       function drawOneStep() {
+        var t2,pi1,pi2;
+        var splines = that.pattern.getSplines();
         if(t>=1.0) clearInterval(intervalId);
         else {
-          t2 = (t+step>1.0) ? 1.0 : t+step;
+          t2 = (t+that.step>1.0) ? 1.0 : t+that.step;
+          console.log("t: "+t+", t2: "+t2)
 
           for (var i=0;i<splines.length;i++) {
             var s=splines[i];
-            if (s != null) { // skip if one-point spline
-              this.ctx.strokeStyle="rgb("+s.getRed()+","+s.getGreen()+","+s.getBlue()+")";
+            if (s != null) {
+              that.ctx.strokeStyle="rgb("+s.getRed()+","+s.getGreen()+","+s.getBlue()+")";
               pi1=s.value_at(t);
               pi2=s.value_at(t2);
               var p1=pi1.getPoint(), p2=pi2.getPoint();
-              line(p1.getX(),p1.getY(), p2.getX(),p2.getY());
+              G.line(that.ctx, p1.getX(),p1.getY(), p2.getX(),p2.getY());
             }
           }
           t=t2;
@@ -205,7 +161,6 @@ Celtic.prototype = {
       }
     }
 };
-
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -222,9 +177,9 @@ function Edge(n1,n2) {
   this.getNode1 = function() { return node1; };
   this.getNode2 = function() { return node2; };
 
-  this.draw = function()
+  this.draw = function(ctx)
   {
-    line(node1.getX(),node1.getY(), node2.getX(),node2.getY());
+    G.line(ctx,node1.getX(),node1.getY(), node2.getX(),node2.getY());
   };
 
   this.toString = function()
@@ -320,13 +275,13 @@ function Graph(params) {
     // for each node of edge 'edge', add it to 'e'
     edge.getNode1().add_edge(edge);
     edge.getNode2().add_edge(edge);
-    //    print("Adding: "+e+"\n");
+    //    console.log("Adding: "+e+"\n");
   };
 
   this.add_node = function(node)
   {
     this.nodes.push(node);
-    //    print("Adding: "+n+"\n");
+    //    console.log("Adding: "+n+"\n");
   };
   switch (this.params.type) {
   case Graph.TYPE_POLAR:
@@ -524,12 +479,12 @@ Graph.prototype.next_edge_around = function(n, ed) {
 return next_edge;
 };
 
-Graph.prototype.draw = function()
+Graph.prototype.draw = function(ctx)
 {
   var i;
   ctx.strokeStyle = "rgb(0,0,0)";
-  for (i=0;i<this.nodes.length;i++) this.nodes[i].draw();
-  for (i=0;i<this.edges.length;i++) this.edges[i].draw();
+  for (i=0;i<this.nodes.length;i++) this.nodes[i].draw(ctx);
+  for (i=0;i<this.edges.length;i++) this.edges[i].draw(ctx);
 };
 
 Graph.prototype.toString = function()
@@ -582,9 +537,9 @@ function Node(new_x, new_y)
   this.setY = function(new_y) { y=new_y; };
   this.setEdges = function(new_edges) { edges=new_edges; };
 
-  this.draw = function()
+  this.draw = function(ctx)
   {
-    circle(x, y, 4.0);
+    G.circle(ctx, x, y, 4.0);
   };
 
   this.toString = function()
@@ -610,6 +565,13 @@ function Pattern(new_g, new_shape1, new_shape2) {
   var ec=new EdgeCouple(new_g.edges.length);
 
   this.getSplines = function() { return splines; };
+
+  this.draw = function(ctx) {
+    ctx.strokeStyle = "red";
+    for (var i=0;i<splines.length;i++) {
+      splines[i].draw(ctx);
+    }
+  };
 
   this.toString = function() {
     var result="Pattern: { splines: [";
@@ -648,7 +610,7 @@ function Pattern(new_g, new_shape1, new_shape2) {
     // (x3,y3) ditto.
     // (x4,y4) the midpoint of edge2
 
-//    print("addBezierCurve(s :"+s+", node: "+node+", edge1: "+edge1+", edge2: "+edge2+", direction: "+direction);
+//    console.log("addBezierCurve(s :"+s+", node: "+node+", edge1: "+edge1+", edge2: "+edge2+", direction: "+direction);
 
     var x1=(edge1.getNode1().getX()+edge1.getNode2().getX())/2.0;
     var y1=(edge1.getNode1().getY()+edge1.getNode2().getY())/2.0;
@@ -685,9 +647,9 @@ function Pattern(new_g, new_shape1, new_shape2) {
       y3 = -beta*(x4-i2x) + i2y;
       break;
     default:
-      print("Error in addBezierCurve: direction is neither CLOCKWISE nor ANTICLOCKWISE: "+direction);
+      console.log("Error in addBezierCurve: direction is neither CLOCKWISE nor ANTICLOCKWISE: "+direction);
     }
-//    print("adding Bezier ("+x1+","+y1+" -- "+x2+","+y2+" -- "+x3+","+y3+" -- "+x4+","+y4+")");
+    //console.log("adding Bezier ("+x1+","+y1+" -- "+x2+","+y2+" -- "+x3+","+y3+" -- "+x4+","+y4+")");
     s.add_segment(x1,y1,x2,y2,x3,y3,x4,y4);
   };
 
@@ -740,11 +702,11 @@ function Pattern(new_g, new_shape1, new_shape2) {
       } while (current_node!=first_node ||
                current_edge_direction.e!=first_edge_direction.e ||
                current_edge_direction.d!=first_edge_direction.d);
-//      print("2="+this.splines.length);
+//      console.log("2="+this.splines.length);
       if (s.getSegments().length>2) // spline is just one point: remove it
         splines.push(s);
 
-//      print("3="+this.splines.length);
+//      console.log("3="+this.splines.length);
     }
   };
 };
@@ -785,7 +747,7 @@ function Spline(new_red,new_green,new_blue) {
   var _blue=new_blue;
 
 //    var cssColorString="rgb("+red+","+green+","+blue+")";
-//    print("new Spline: "+cssColorString)
+//    console.log("new Spline: "+cssColorString)
 //    ctx.strokeStyle=cssColorString;
 
   // accessors
@@ -797,7 +759,6 @@ function Spline(new_red,new_green,new_blue) {
   this.add_segment = function(x1, y1, x2, y2, x3, y3, x4, y4)
   {
     var bezier = new CubicBezierCurve(x1,y1,x2,y2,x3,y3,x4,y4);
-//    print("adding: "+bezier);
     segments.push(bezier);
   };
 
@@ -808,26 +769,28 @@ function Spline(new_red,new_green,new_blue) {
     var ss;
     si = Math.floor(t*segments.length);
     if (si==segments.length) si--;
-//    print("out: "+si+", "+segments.length+", "+t+"\n");
+//    console.log("out: "+si+", "+segments.length+", "+t+"\n");
     tt = t*segments.length - si;
     ss=segments[si];
-//    print("ss: "+ss);
     var pi=new PointIndex(ss.getX1()*(1-tt)*(1-tt)*(1-tt)+3*ss.getX2()*tt*(1-tt)*(1-tt)+3*ss.getX3()*tt*tt*(1-tt)+ss.getX4()*tt*tt*tt,
                           ss.getY1()*(1-tt)*(1-tt)*(1-tt)+3*ss.getY2()*tt*(1-tt)*(1-tt)+3*ss.getY3()*tt*tt*(1-tt)+ss.getY4()*tt*tt*tt,
                           si);
-//    print(pi);
     return pi;
   };
 
-  this.draw = function() {
+  this.draw = function(ctx) {
     for (var i=0;i<segments.length;i++) {
-      var s=segments[i];
-      s.draw();
+      segments[i].draw(ctx);
     }
   };
 
   this.toString = function() {
-    return "Spline: { "+segments.length+" segments }";
+    var s=[];
+    for (var i=0; i<segments.length; i++) {
+      s.push(segments[i].toString());
+    }
+    return "Spline: { "+segments.length+" segments ("+ s.join(",") +") }";
+
   };
 };
 
@@ -852,14 +815,14 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
   this.getY4 = function() { return y4; };
 
 
-  this.draw = function() {
-    circle(x1, y1, 2.0);
-    circle(x2, y2, 2.0);
-    circle(x3, y3, 2.0);
-    circle(x4, y4, 2.0);
-    line(x1,y1, x2,y2);
-    line(x2,y2, x3,y3);
-    line(x3,y3, x4,y4);
+  this.draw = function(ctx) {
+    G.circle(ctx, x1, y1, 2.0);
+    G.circle(ctx, x2, y2, 2.0);
+    G.circle(ctx, x3, y3, 2.0);
+    G.circle(ctx, x4, y4, 2.0);
+    G.line(ctx, x1,y1, x2,y2);
+    G.line(ctx, x2,y2, x3,y3);
+    G.line(ctx, x3,y3, x4,y4);
   };
 
   this.toString = function() {
@@ -870,5 +833,22 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 
 //================================================================================
 
-
-
+var G = {
+    line: function(ctx,x1,y1, x2,y2) {
+      // <http://processing.org/reference/line_.html>
+      //  this.ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
+      //  console.log("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.closePath();
+      ctx.stroke();
+    },
+    circle: function(ctx, cx,cy,radius) {
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx,cy,radius,0,2*Math.PI,false);
+      ctx.closePath();
+      ctx.stroke();
+    }
+};
