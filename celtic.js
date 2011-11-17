@@ -1,6 +1,6 @@
 var Const = {
-  CLOCKWISE:0,
-  ANTICLOCKWISE:1,
+  ANTICLOCKWISE:0,
+  CLOCKWISE:1,
   SQRT_3: 1.73205080756887729352,
   RGB: 0,
   HSB: 1
@@ -53,18 +53,14 @@ var Celtic = (function() {
       this.ctx = canvas.getContext("2d");
       this.ctx.lineJoin="round";
       this.ctx.lineCap="round";
-      this.ctx.shadowColor="rgba(0,0,0,.5)";
-      this.ctx.shadowOffsetX=5;
-      this.ctx.shadowOffsetY=5;
-      this.ctx.shadowBlur=3;
       width = canvas.width;
       height = canvas.height;
       this.delay = 50; // step delay in microsecs
       this.step=0.001; // parameter increment for progressive rendering
 
       // random colour background
-      this.ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
-      this.ctx.fillRect(0,0,width,height);
+//      this.ctx.fillStyle="rgb("+randomInt(0,100)+","+randomInt(0,100)+","+randomInt(0,100)+")";
+//      this.ctx.fillRect(0,0,width,height);
 
 
       curve_width=randomFloat(4,10);
@@ -111,8 +107,10 @@ var Celtic = (function() {
       this.pattern=new Pattern(graph, params.shape1, params.shape2);
       this.pattern.make_curves();
 
-      graph.draw(this.ctx);
+//      graph.draw(this.ctx);
+//      console.log("graph: "+graph);
       this.pattern.draw(this.ctx);
+//      console.log("pattern: "+this.pattern);
 //      console.log(this.pattern.toString());
 
       //  if (pattern.splines.length==1) {
@@ -138,14 +136,17 @@ Celtic.prototype = {
       var that=this;
       var t=0;
       var intervalId = setInterval(drawOneStep,this.delay);
+      this.ctx.shadowColor="rgba(0,0,0,.5)";
+      this.ctx.shadowOffsetX=5;
+      this.ctx.shadowOffsetY=5;
+      this.ctx.shadowBlur=3;
+
       function drawOneStep() {
         var t2,pi1,pi2;
         var splines = that.pattern.getSplines();
         if(t>=1.0) clearInterval(intervalId);
         else {
           t2 = (t+that.step>1.0) ? 1.0 : t+that.step;
-          console.log("t: "+t+", t2: "+t2)
-
           for (var i=0;i<splines.length;i++) {
             var s=splines[i];
             if (s != null) {
@@ -184,7 +185,7 @@ function Edge(n1,n2) {
 
   this.toString = function()
   {
-    return "Edge: {node1: "+node1+", node2: "+node2+"}";
+    return "Edge: {node1: "+node1+", node2: "+node2+", angle1: "+this.angle(node1)+"}";
   };
 
   this.angle = function(n)
@@ -218,22 +219,26 @@ function Edge(n1,n2) {
 
 //======================================================================
 
-function EdgeCouple(nb_edges)
+var EdgeCoupleArray = (function()
 {
-  var size = nb_edges;
-  var array = new Array(size);
+  return function(nb_edges) {
+    this.size = nb_edges;
+    this.array = new Array(this.size);
+    for (var i=0;i<this.size;i++) {
+      this.array[i] = new Array(2);
+      this.array[i][Const.CLOCKWISE] = 0;
+      this.array[i][Const.ANTICLOCKWISE] = 0;
+    }
+  };
+})();
 
-  // Accessors
-  this.getSize = function() { return size;  };
-  this.getArray = function() { return array;  };
+EdgeCoupleArray.prototype = {
+  getSize: function() { return this.size;  },
+  getArray: function() { return this.array;  },
+  toString: function() { return "EdgeCoupleArray: "+this.size+" EdgeCouples"; }
+};
 
-  // constructor
-  for (var i=0;i<size;i++) {
-    array[i] = new Array(2);
-    array[i][Const.CLOCKWISE] = 0;
-    array[i][Const.ANTICLOCKWISE] = 0;
-  }
-}
+
 
 
 //======================================================================
@@ -462,21 +467,28 @@ function Graph(params) {
 
 
 
-Graph.prototype.next_edge_around = function(n, ed) {
-  // return the next edge after e around node n clockwise
+Graph.prototype.next_edge_around = function(node, edge_direction) {
+  // find the next edge in the direction around node from edge
+console.log("Next edge around "+node+", "+edge_direction);
+  var theNode = node;
+  var theEdge = edge_direction.getEdge();
+  var theDirection = edge_direction.getDirection();
+
   var angle, minangle=20;
-  var next_edge = ed.getEdge(), edge;
-  for (var i=0;i<n.getEdges().length;i++) {
-    edge=n.getEdges()[i];
-    if (edge != ed.getEdge()) {
-      angle = ed.getEdge().angle_to(edge,n,ed.getDirection());
+  var next_edge, edgeCandidate;
+  var edgesAroundNode = theNode.getEdges();
+  for (var i=0;i<edgesAroundNode.length;i++) {
+    edgeCandidate=edgesAroundNode[i];
+    if (edgeCandidate != theEdge) {
+      angle = theEdge.angle_to(edgeCandidate,theNode,theDirection);
       if (angle < minangle) {
-        next_edge=edge;
+        next_edge=edgeCandidate;
         minangle=angle;
       }
     }
   }
-return next_edge;
+console.log("Next edge around. redturning: "+next_edge);
+  return next_edge;
 };
 
 Graph.prototype.draw = function(ctx)
@@ -562,19 +574,20 @@ function Pattern(new_g, new_shape1, new_shape2) {
   var shape1=new_shape1;
   var shape2=new_shape2;
   var graph=new_g;
-  var ec=new EdgeCouple(new_g.edges.length);
+  var ec=new EdgeCoupleArray(new_g.edges.length);
 
   this.getSplines = function() { return splines; };
 
   this.draw = function(ctx) {
-    ctx.strokeStyle = "red";
+//    ctx.strokeStyle = "red";
     for (var i=0;i<splines.length;i++) {
+      ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
       splines[i].draw(ctx);
     }
   };
 
   this.toString = function() {
-    var result="Pattern: { splines: [";
+    var result="Pattern: { "+splines.length+" splines: [";
     for (var i=0;i<splines.length;i++) {
       result+=splines[i];
     }
@@ -678,8 +691,9 @@ function Pattern(new_g, new_shape1, new_shape2) {
     var current_direction, first_direction;
     var s; //Spline
     var first_edge_direction, current_edge_direction;
-
+console.log("make_curves");
     while ((first_edge_direction=this.next_unfilled_couple())!=null) {
+      console.log("first e_d: "+first_edge_direction);
       // start a new loop
       s=new Spline(randomInt(100,255), randomInt(100,255), randomInt(100,255));
 
@@ -688,6 +702,7 @@ function Pattern(new_g, new_shape1, new_shape2) {
       current_node=first_node=current_edge_direction.getEdge().getNode1();
 
       do {
+
         this.edge_couple_set(current_edge_direction, 1);
         next_edge = graph.next_edge_around(current_node,current_edge_direction);
 
@@ -699,14 +714,14 @@ function Pattern(new_g, new_shape1, new_shape2) {
         current_node = next_edge.other_node(current_node);
         current_edge_direction.setDirection(1-current_edge_direction.getDirection());
 
+        console.log("current e_d: "+current_edge_direction);
+
+
       } while (current_node!=first_node ||
                current_edge_direction.e!=first_edge_direction.e ||
                current_edge_direction.d!=first_edge_direction.d);
-//      console.log("2="+this.splines.length);
       if (s.getSegments().length>2) // spline is just one point: remove it
         splines.push(s);
-
-//      console.log("3="+this.splines.length);
     }
   };
 };
@@ -838,6 +853,7 @@ var G = {
       // <http://processing.org/reference/line_.html>
       //  this.ctx.strokeStyle="rgb("+randomInt(0,255)+","+randomInt(0,255)+","+randomInt(0,255)+")";
       //  console.log("tracing line from ("+x1+","+y1+" to ("+x2+","+y2+")");
+      ctx.lineWidth=10;
       ctx.beginPath();
       ctx.moveTo(x1,y1);
       ctx.lineTo(x2,y2);
@@ -845,7 +861,7 @@ var G = {
       ctx.stroke();
     },
     circle: function(ctx, cx,cy,radius) {
-      ctx.lineWidth = 2;
+      ctx.lineWidth=2;
       ctx.beginPath();
       ctx.arc(cx,cy,radius,0,2*Math.PI,false);
       ctx.closePath();
