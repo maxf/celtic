@@ -39,25 +39,26 @@
         $('#slider-kennicott-edge_size').slider({value:80, min:70, max:90, step:.1});
         $('#slider-kennicott-cluster_size').slider({value:10, min:5, max:30, step:.1});
 
-//        $("#go").bind("click", function(event, ui) {
-//          pattern = new Celtic({type: $("#tabs").tabs().tabs('option','selected'),
-//                       shape1: $('#slider-shape1').slider('value'),
-//                       shape2: $('#slider-shape2').slider('value'),
-//                       width: $('#slider-width').slider('value'),
-//                       step: $('#slider-step').slider('value'),
-//                       margin: $('#slider-margin').slider('value'),
-//                       nb_orbits: $('#slider-nb_orbits').slider('value'),
-//                       nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
-//                       triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
-//                       tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
-//                       kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
-//                       kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
-//                      });
-//          pattern.draw();
-//        });
+        $("#go").bind("click", function(event, ui) {
+          pattern = new Celtic({type: $("#tabs").tabs().tabs('option','selected'),
+                       shape1: $('#slider-shape1').slider('value'),
+                       shape2: $('#slider-shape2').slider('value'),
+                       width: $('#slider-width').slider('value'),
+                       step: $('#slider-step').slider('value'),
+                       margin: $('#slider-margin').slider('value'),
+                       nb_orbits: $('#slider-nb_orbits').slider('value'),
+                       nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
+                       triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
+                       tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
+                       kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
+                       kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
+                      });
+          pattern.draw();
+        });
+//       $("#go").bind("click", function(event, ui) {
           pattern = new Celtic({type: 3,
-                       shape1: 0.1,
-                       shape2: -0.1,
+                       shape1: 0.2,
+                       shape2: 0.2,
                        width: 5,
                        step: 0.01,
                        margin: 0,
@@ -68,8 +69,7 @@
                        kennicott_edge_size: 80,
                        kennicott_cluster_size: 10
                       });
-//          pattern.draw();
-        
+          pattern.draw();
       });
     </script>
   </head>
