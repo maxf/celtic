@@ -11,7 +11,7 @@ Math.randomFloat = function (min, max) {
 
 Math.randomInt = function (min, max) {
   "use strict";
-  return Math.floor(Math.random() * (max - min) + min) | 0;
+  return Math.floor(Math.random() * (max - min) + min);
 };
 
 
@@ -170,8 +170,8 @@ function Graph(params) {
 
   switch (this.params.type) {
   case Graph.TYPE_POLAR:
-    nbp = this.params.nb_nodes_per_orbit | 0; // number of points on each orbit
-    nbo = this.params.nb_orbits | 0; // number of orbits
+    nbp = Math.floor(this.params.nb_nodes_per_orbit); // number of points on each orbit
+    nbo = Math.floor(this.params.nb_orbits); // number of orbits
     os = (this.width < this.height ? this.width : this.height) / (2 * nbo); // orbit height
 
     grid = []; // array of Node (1+nbp*nbo of them)
@@ -209,7 +209,7 @@ function Graph(params) {
     cy = (this.ymin + this.height / 2.0); /* centre of the triangle */
     p2x = (cx - L * Math.SQRT_3 / 2.0);
     p2y = (cy + L / 2.0); /* p2 is the bottom left vertex */
-    nsteps = Math.floor(3 * L / (Math.SQRT_3 * edge_size)) | 0;
+    nsteps = Math.floor(3 * L / (Math.SQRT_3 * edge_size));
     grid = []; //new Array((nsteps + 1) * (nsteps + 1));
 
     // create node grid
@@ -248,8 +248,8 @@ function Graph(params) {
     step = this.params.kennicott_edge_size;
     cluster_size = this.params.kennicott_cluster_size;
     size = this.width < this.height ? this.height : this.width;
-    nbcol = Math.floor((1 + size / step) / 2 * 2) | 0; //@@ was (int)((1 + size/step)/2 * 2)
-    nbrow = Math.floor((1 + size / step) / 2 * 2) | 0;
+    nbcol = Math.floor((1 + size / step) / 2 * 2); //@@ was (int)((1 + size/step)/2 * 2)
+    nbrow = Math.floor((1 + size / step) / 2 * 2);
     grid = []; //new Array(5 * nbrow * nbcol);   /* there are 5 nodes in each cluster */
 
     /* adjust xmin and xmax so that the grid is centred */
@@ -307,7 +307,7 @@ function Graph(params) {
 
   case Graph.TYPE_TGRID:
     // simple grid graph
-    step = params.tgrid_edge_size | 0;
+    step = Math.floor(params.tgrid_edge_size);
     size = this.width < this.height ? this.height : this.width;
 
     // empirically, it seems there are 2 curves only if both
