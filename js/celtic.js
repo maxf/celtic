@@ -637,8 +637,8 @@ function Pattern(new_g, new_shape1, new_shape2) {
     for (i = 0; i < graph.edges.length; i = i + 1) {
       if (graph.edges[i] === edgeDirection.getEdge()) {
         ec.getArray()[i][edgeDirection.getDirection()] = value;
-        console.log("setting edge_index " + i + " with dir: " + edgeDirection.getDirection() + " to " + value);
-        console.log(ec.toString());
+//        console.log("setting edge_index " + i + " with dir: " + edgeDirection.getDirection() + " to " + value);
+//        console.log(ec.toString());
         return;
       }
     }
@@ -719,7 +719,6 @@ function Pattern(new_g, new_shape1, new_shape2) {
         }
       }
     }
-    console.log("next_unfilled_couple: " + ed);
     return ed; // possibly null if no edge found
   };
 
