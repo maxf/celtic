@@ -24,6 +24,17 @@
     <script type="text/javascript" src="js/jquery-ui-1.8.1.custom.min.js"></script>
     <script type="text/javascript">
       var pattern;
+
+      // set the scene size
+      var WIDTH = 800, HEIGHT = 800;
+
+      // set some camera attributes
+      var VIEW_ANGLE = 45,
+      ASPECT = WIDTH / HEIGHT,
+      NEAR = 0.1,
+      FAR = 10000;
+
+
       $(document).ready(function(){
         $("#tabs").tabs();
         $('#slider-shape1').slider({ value: 0, min: -2, max: 2, step: 0.01 });
@@ -38,28 +49,98 @@
         $('#slider-kennicott-edge_size').slider({value:80, min:70, max:90, step:.1});
         $('#slider-kennicott-cluster_size').slider({value:10, min:5, max:30, step:.1});
 
-        $("#go").bind("click", function(event, ui) {
-          pattern = new Celtic({type: $("#tabs").tabs().tabs('option','selected'),
-                       shape1: $('#slider-shape1').slider('value'),
-                       shape2: $('#slider-shape2').slider('value'),
-                       width: $('#slider-width').slider('value'),
-                       step: $('#slider-step').slider('value'),
-                       margin: $('#slider-margin').slider('value'),
-                       nb_orbits: $('#slider-nb_orbits').slider('value'),
-                       nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
-                       triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
-                       tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
-                       kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
-                       kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
-                      });
-          pattern.draw();
-        });
+
+// get the DOM element to attach to
+// - assume we've got jQuery to hand
+var $container = $('#container');
+
+// create a WebGL renderer, camera
+// and a scene
+var renderer = new THREE.WebGLRenderer();
+var camera = new THREE.PerspectiveCamera(
+                   VIEW_ANGLE,
+                   ASPECT,
+                   NEAR,
+                   FAR );
+
+var scene = new THREE.Scene();
+
+// the camera starts at 0,0,0 so pull it back
+camera.position.x = WIDTH/2;
+camera.position.y = HEIGHT/2;
+camera.position.z = 1500;
+
+// start the renderer
+renderer.setSize(WIDTH, HEIGHT);
+
+// attach the render-supplied DOM element
+$container.append(renderer.domElement);
+
+var pattern = new Celtic({type: 3,
+                          shape1: 0.2,
+                          shape2: 0.2,
+                          width: 5,
+                          step: 0.01,
+                          margin: 0,
+                          nb_orbits: 1,
+                          nb_nodes_per_orbit: 4,
+                          triangle_edge_size: 100,
+                          tgrid_edge_size: 60,
+                          kennicott_edge_size: 80,
+                          kennicott_cluster_size: 10
+                         });
+pattern.getGraph().draw(scene);
+
+// var cylinderMaterial = new THREE.MeshLambertMaterial(
+//  {
+//      color: 0x00CC00
+//  });
+// var cylinder = new THREE.Mesh(
+//     new THREE.CylinderGeometry(10,10,200,10,10,false),
+//     cylinderMaterial);
+// cylinder.position.x = 0;
+// cylinder.position.y = 0;
+// cylinder.position.z = 0;
+// cylinder.rotation.z = Math.PI/4;
+// scene.add(cylinder);
+
+
+// create a point light
+var pointLight = new THREE.PointLight( 0xFFFFFF );
+
+// set its position
+pointLight.position.x = 10;
+pointLight.position.y = 50;
+pointLight.position.z = 130;
+
+// add to the scene
+scene.add(pointLight);
+
+// draw!
+renderer.render(scene, camera);
+
+
+//         $("#go").bind("click", function(event, ui) {
+//           pattern = new Celtic({type: $("#tabs").tabs().tabs('option','selected'),
+//                        shape1: $('#slider-shape1').slider('value'),
+//                        shape2: $('#slider-shape2').slider('value'),
+//                        width: $('#slider-width').slider('value'),
+//                        step: $('#slider-step').slider('value'),
+//                        margin: $('#slider-margin').slider('value'),
+//                        nb_orbits: $('#slider-nb_orbits').slider('value'),
+//                        nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
+//                        triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
+//                        tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
+//                        kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
+//                        kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
+//                       });
+//           pattern.draw(scene);
+//         });
       });
     </script>
   </head>
   <body>
     <div id="container"></div>
-    <canvas id="canvas" height="800px" width="800px"></canvas>
     <div id="controls">
       <input type="button" id="go" value="Go"/>
 
@@ -106,6 +187,7 @@
     </div>
 
     <script src="js/Three.js"></script>
+    <script src="js/G3D.js"></script>
     <script src="js/celtic.js"></script>
   </body>
 </html>

@@ -1,5 +1,6 @@
 /*jslint devel: true, browser: true, maxerr: 50, indent: 2 */
 
+var G3D; // externals
 
 Math.SQRT_3 = 1.73205080756887729352;
 Math.randomFloat = function (min, max) {
@@ -24,31 +25,6 @@ var Const = {
 
 //######################################################################
 
-var G = {
-  line: function (ctx, x1, y1, x2, y2) {
-    // <http://processing.org/reference/line_.html>
-    //  this.ctx.strokeStyle ="rgb(" + Math.randomInt(0, 255) + "," + Math.randomInt(0, 255) + "," + Math.randomInt(0, 255) + ")";
-    //  console.log("tracing line from (" + x1 + "," + y1 + " to (" + x2 + "," + y2 + ")");
-    "use strict";
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.closePath();
-    ctx.stroke();
-  },
-  circle: function (ctx, cx, cy, radius) {
-    "use strict";
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, 2 * Math.PI, false);
-    ctx.closePath();
-    ctx.stroke();
-  }
-};
-
-
-
-//######################################################################
-
 function Node(new_x, new_y) {
   "use strict";
 
@@ -64,8 +40,8 @@ function Node(new_x, new_y) {
   this.setY = function (new_y) { y = new_y; };
   this.setEdges = function (new_edges) { edges = new_edges; };
 
-  this.draw = function (ctx) {
-    G.circle(ctx, x, y, 4.0);
+  this.draw = function (scene) {
+    G3D.add_sphere(scene, x, y, 0, 4);
   };
 
   this.toString = function () {
@@ -96,8 +72,8 @@ function Edge(n1, n2) {
   this.getNode1 = function () { return node1; };
   this.getNode2 = function () { return node2; };
 
-  this.draw = function (ctx) {
-    G.line(ctx, node1.getX(), node1.getY(), node2.getX(), node2.getY());
+  this.draw = function (scene) {
+    G3D.line(scene, node1.getX(), node1.getY(), 0, node2.getX(), node2.getY(), 0);
   };
 
   this.toString = function () {
@@ -388,13 +364,13 @@ Graph.prototype.next_edge_around = function (node, edge_direction) {
   return next_edge;
 };
 
-Graph.prototype.draw = function (ctx) {
+Graph.prototype.draw = function (scene) {
   "use strict";
   var i;
-  ctx.strokeStyle = "rgb(0, 0, 0)";
-  ctx.lineWidth = 2;
-  for (i = 0; i < this.nodes.length; i = i + 1) { this.nodes[i].draw(ctx); }
-  for (i = 0; i < this.edges.length; i = i + 1) { this.edges[i].draw(ctx); }
+//  scene.strokeStyle = "rgb(0, 0, 0)";
+//  scene.lineWidth = 2;
+  for (i = 0; i < this.nodes.length; i = i + 1) { this.nodes[i].draw(scene); }
+  for (i = 0; i < this.edges.length; i = i + 1) { this.edges[i].draw(scene); }
 };
 
 Graph.prototype.toString = function () {
@@ -501,14 +477,14 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
   this.getY4 = function () { return y4; };
 
 
-  this.draw = function (ctx) {
-    G.circle(ctx, x1, y1, 2.0);
-    G.circle(ctx, x2, y2, 2.0);
-    G.circle(ctx, x3, y3, 2.0);
-    G.circle(ctx, x4, y4, 2.0);
-    G.line(ctx, x1, y1, x2, y2);
-    G.line(ctx, x2, y2, x3, y3);
-    G.line(ctx, x3, y3, x4, y4);
+  this.draw = function (scene) {
+    G3D.add_sphere(scene, x1, y1, 0, 2);
+    G3D.add_sphere(scene, x2, y2, 0, 2);
+    G3D.add_sphere(scene, x3, y3, 0, 2);
+    G3D.add_sphere(scene, x4, y4, 0, 2);
+    G3D.line(scene, x1, y1, 0, x2, y2, 0);
+    G3D.line(scene, x2, y2, 0, x3, y3, 0);
+    G3D.line(scene, x3, y3, 0, x4, y4, 0);
   };
 
   this.toString = function () {
@@ -583,10 +559,10 @@ function Spline(new_red, new_green, new_blue) {
     return pi;
   };
 
-  this.draw = function (ctx) {
+  this.draw = function (scene) {
     var i;
     for (i = 0; i < segments.length; i = i + 1) {
-      segments[i].draw(ctx);
+      segments[i].draw(scene);
     }
   };
 
@@ -613,8 +589,6 @@ function Pattern(new_g, new_shape1, new_shape2) {
     graph = new_g,
     ec = new EdgeCoupleArray(new_g.edges.length),
     i;
-
-  this.getSplines = function () { return splines; };
 
   this.draw = function (ctx) {
 //    ctx.strokeStyle = "red";
@@ -785,7 +759,7 @@ var Celtic = (function () {
       width, height,
       colorMode = Const.RGB, // one of RGB or HSB
       graphRotationAngle = 0,//Math.randomFloat(0, 2 * Math.PI),
-      graph, graphParams;
+      graphParams;
 
     this.color = function (a, b, c) {
       switch (this.colorMode) {
@@ -794,20 +768,20 @@ var Celtic = (function () {
     };
 
     // constructor code
-    canvas = document.getElementById("canvas");
-    if (canvas) {
-      this.ctx = canvas.getContext("2d");
-      this.ctx.lineJoin = "round";
-      this.ctx.lineCap = "round";
-      width = canvas.width;
-      height = canvas.height;
+//     canvas = document.getElementById("canvas");
+//     if (canvas) {
+//       this.ctx = canvas.getContext("2d");
+//       this.ctx.lineJoin = "round";
+//       this.ctx.lineCap = "round";
+      width = WIDTH;
+      height = HEIGHT;
       this.delay = 10; // step delay in microsecs
       this.step = 0.001; // parameter increment for progressive rendering
-
-      // random colour background
-      this.ctx.fillStyle = "rgb(" + Math.randomInt(100, 255) + ", " + Math.randomInt(100, 255) + ", " + Math.randomInt(100, 255) + ")";
-      this.ctx.fillRect(0, 0, width, height);
-
+//
+//       // random colour background
+//       this.ctx.fillStyle = "rgb(" + Math.randomInt(100, 255) + ", " + Math.randomInt(100, 255) + ", " + Math.randomInt(100, 255) + ")";
+//       this.ctx.fillRect(0, 0, width, height);
+//
 
       curve_width = Math.randomFloat(4, 10);
       shadow_width = curve_width + 4;
@@ -848,38 +822,29 @@ var Celtic = (function () {
       graphParams = params;
       graphParams.width = width;
       graphParams.height = height;
-      graph = new Graph(graphParams);
+      this.graph = new Graph(graphParams);
 //      graph.draw(this.ctx);
 
-      graph.rotate(graphRotationAngle, width / 2, height / 2);
-      this.pattern = new Pattern(graph, params.shape1, params.shape2);
+      this.graph.rotate(graphRotationAngle, width / 2, height / 2);
+      this.pattern = new Pattern(this.graph, params.shape1, params.shape2);
       this.pattern.make_curves();
 
-
-//      console.log("graph: " + graph);
-//      this.pattern.draw(this.ctx);
-//      console.log("pattern: " + this.pattern);
-//      console.log(this.pattern.toString());
-
-      //  if (pattern.splines.length === 1) {
       colorMode = Const.HSB;
       this.color(Math.randomInt(0, 256), 200, 200);
-//      start = color(Math.randomInt(0, 256), 200, 200);
-//      end = color(Math.randomInt(0, 256), 200, 200);
-      //  }
-      this.ctx.lineWidth = curve_width;
+//      this.ctx.lineWidth = curve_width;
       //  stroke(0, 0, 0);
       //graph.draw();
       //  console.log(graph);
-    } else {
-      console.log("canvas not supported");
-    }
+//     } else {
+//       console.log("canvas not supported");
+//     }
   };
 }());
 
 
 // public methods
 Celtic.prototype = {
+  getGraph: function () { "use strict"; return this.graph; },
   draw: function () {
     "use strict";
     var
@@ -906,7 +871,7 @@ Celtic.prototype = {
               pi2 = s.value_at(t2);
               p1 = pi1.getPoint();
               p2 = pi2.getPoint();
-              G.line(that.ctx, p1.getX(), p1.getY(), p2.getX(), p2.getY());
+              G3D.line(that.scene, p1.getX(), p1.getY(), 0, p2.getX(), p2.getY(), 0);
             }
           }
           t = t2;
@@ -914,41 +879,5 @@ Celtic.prototype = {
       },
       this.delay
     );
-  }
-};
-
-
-//######################################################################
-
-
-
-
-
-//######################################################################
-
-
-//######################################################################
-
-
-
-
-var G = {
-  line: function (ctx, x1, y1, x2, y2) {
-    "use strict";
-    // <http://processing.org/reference/line_.html>
-    //  this.ctx.strokeStyle ="rgb(" + Math.randomInt(0, 255) + "," + Math.randomInt(0, 255) + "," + Math.randomInt(0, 255) + ")";
-    //  console.log("tracing line from (" + x1 + "," + y1 + " to (" + x2 + "," + y2 + ")");
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.closePath();
-    ctx.stroke();
-  },
-  circle: function (ctx, cx, cy, radius) {
-    "use strict";
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, 2 * Math.PI, false);
-    ctx.closePath();
-    ctx.stroke();
   }
 };
