@@ -952,4 +952,3 @@ var G = {
     ctx.stroke();
   }
 };
-
