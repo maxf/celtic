@@ -66,8 +66,8 @@ var camera = new THREE.PerspectiveCamera(
 var scene = new THREE.Scene();
 
 // the camera starts at 0,0,0 so pull it back
-camera.position.x = WIDTH/2;
-camera.position.y = HEIGHT/2;
+camera.position.x = 0;
+camera.position.y = 0;
 camera.position.z = 1500;
 
 // start the renderer
@@ -76,14 +76,14 @@ renderer.setSize(WIDTH, HEIGHT);
 // attach the render-supplied DOM element
 $container.append(renderer.domElement);
 
-var pattern = new Celtic({type: 3,
+var pattern = new Celtic({type: 1,
                           shape1: 0.2,
                           shape2: 0.2,
-                          width: 5,
+                          width: 400,
                           step: 0.01,
                           margin: 0,
-                          nb_orbits: 1,
-                          nb_nodes_per_orbit: 4,
+                          nb_orbits: 4,
+                          nb_nodes_per_orbit: 8,
                           triangle_edge_size: 100,
                           tgrid_edge_size: 60,
                           kennicott_edge_size: 80,
@@ -91,26 +91,13 @@ var pattern = new Celtic({type: 3,
                          });
 pattern.getGraph().draw(scene);
 
-// var cylinderMaterial = new THREE.MeshLambertMaterial(
-//  {
-//      color: 0x00CC00
-//  });
-// var cylinder = new THREE.Mesh(
-//     new THREE.CylinderGeometry(10,10,200,10,10,false),
-//     cylinderMaterial);
-// cylinder.position.x = 0;
-// cylinder.position.y = 0;
-// cylinder.position.z = 0;
-// cylinder.rotation.z = Math.PI/4;
-// scene.add(cylinder);
-
 
 // create a point light
 var pointLight = new THREE.PointLight( 0xFFFFFF );
 
 // set its position
-pointLight.position.x = 10;
-pointLight.position.y = 50;
+pointLight.position.x = 100;
+pointLight.position.y = 100;
 pointLight.position.z = 130;
 
 // add to the scene
@@ -134,6 +121,7 @@ renderer.render(scene, camera);
 //                        kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
 //                        kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
 //                       });
+//             pattern.getGraph().draw(scene);
 //           pattern.draw(scene);
 //         });
       });

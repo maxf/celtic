@@ -3,8 +3,8 @@ var G3D = {
     "use strict";
 
     var
-      radiusTop = 10,
-      radiusBottom = 10,
+      radiusTop = 2,
+      radiusBottom = 2,
       height =  Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1)),
       cylinderMaterial = new THREE.MeshLambertMaterial({color: 0xAAAACC}),
       segmentsRadius = 10,

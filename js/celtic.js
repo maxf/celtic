@@ -41,7 +41,7 @@ function Node(new_x, new_y) {
   this.setEdges = function (new_edges) { edges = new_edges; };
 
   this.draw = function (scene) {
-    G3D.add_sphere(scene, x, y, 0, 4);
+    G3D.add_sphere(scene, x, y, 0, 10);
   };
 
   this.toString = function () {
@@ -106,7 +106,6 @@ function Edge(n1, n2) {
 
 //######################################################################
 
-//function Graph(type, xmin, ymin, width, height, param1, param2) {
 function Graph(params) {
   "use strict";
 
@@ -119,17 +118,11 @@ function Graph(params) {
     cluster_size, ci, // for kennicott
     node1, node2, node3; // for custom graph type
 
-
-
   this.params = params;
-
-  this.xmin = this.params.margin;
-  this.ymin = this.params.margin;
-  this.width = this.params.width - 2 * this.params.margin;
-  this.height = this.params.height - 2 * this.params.margin;
+  this.width = this.params.width;
+  this.height = this.params.height;
   this.nodes = [];
   this.edges = [];
-
 
   this.add_edge = function (edge) {
     this.edges.push(edge);
@@ -151,15 +144,13 @@ function Graph(params) {
     os = (this.width < this.height ? this.width : this.height) / (2 * nbo); // orbit height
 
     grid = []; // array of Node (1+nbp*nbo of them)
-    cx = this.width / 2 + this.xmin;
-    cy = this.height / 2 + this.ymin; // centre
 
-    this.add_node(grid[0] = new Node(cx, cy));
+    this.add_node(grid[0] = new Node(0, 0));
 
     for (o = 0; o < nbo; o = o + 1) {
       for (p = 0; p < nbp; p = p + 1) {
-        this.add_node(grid[1 + o * nbp + p] = new Node(cx + (o + 1) * os * Math.sin(p * 2 * Math.PI / nbp),
-                                                       cy + (o + 1) * os * Math.cos(p * 2 * Math.PI / nbp)));
+        this.add_node(grid[1 + o * nbp + p] = new Node((o + 1) * os * Math.sin(p * 2 * Math.PI / nbp),
+                                                       (o + 1) * os * Math.cos(p * 2 * Math.PI / nbp)));
       }
     }
 
@@ -181,10 +172,8 @@ function Graph(params) {
   case Graph.TYPE_TRIANGLE:
     edge_size = this.params.triangle_edge_size;
     L = (this.width < this.height ? this.width : this.height) / 2.0; // circumradius of the triangle
-    cx = (this.xmin + this.width / 2.0);
-    cy = (this.ymin + this.height / 2.0); /* centre of the triangle */
-    p2x = (cx - L * Math.SQRT_3 / 2.0);
-    p2y = (cy + L / 2.0); /* p2 is the bottom left vertex */
+    p2x = (- L * Math.SQRT_3 / 2.0);
+    p2y = (  L / 2.0); /* p2 is the bottom left vertex */
     nsteps = Math.floor(3 * L / (Math.SQRT_3 * edge_size));
     grid = []; //new Array((nsteps + 1) * (nsteps + 1));
 
@@ -224,9 +213,12 @@ function Graph(params) {
     step = this.params.kennicott_edge_size;
     cluster_size = this.params.kennicott_cluster_size;
     size = this.width < this.height ? this.height : this.width;
-    nbcol = Math.floor((1 + size / step) / 2 * 2); //@@ was (int)((1 + size/step)/2 * 2)
+    nbcol = Math.floor((1 + size / step) / 2 * 2);
     nbrow = Math.floor((1 + size / step) / 2 * 2);
     grid = []; //new Array(5 * nbrow * nbcol);   /* there are 5 nodes in each cluster */
+
+    this.xmin = -this.width / 2;
+    this.ymin = -this.height / 2;
 
     /* adjust xmin and xmax so that the grid is centred */
     this.xmin += (this.width - (nbcol - 1) * step) / 2;
@@ -286,7 +278,7 @@ function Graph(params) {
     step = Math.floor(params.tgrid_edge_size);
     size = this.width < this.height ? this.height : this.width;
 
-    // empirically, it seems there are 2 curves only if both
+    // it seems there are 2 curves only if both
     // nbcol and nbrow are even, so we round them to even
     nbcol = Math.floor((2 + size / step) / 2 * 2); //@@ /2 * 2?
     nbrow = Math.floor((2 + size / step) / 2 * 2);
@@ -294,6 +286,10 @@ function Graph(params) {
     //      nbrow = (int)((2 + size / step) / 2 * 2);
 
     grid = []; //new Array((nbrow * nbcol)|0);
+
+    this.xmin = -this.width / 2;
+    this.ymin = -this.height / 2;
+
 
     /* adjust xmin and xmax so that the grid is centered */
     this.xmin += (this.width - (nbcol - 1) * step) / 2;
@@ -383,15 +379,15 @@ Graph.prototype.toString = function () {
   return s;
 };
 
-Graph.prototype.rotate = function (angle, cx, cy) {
+Graph.prototype.rotate = function (angle) {
   "use strict";
-  // rotate all the nodes of this graph around point (cx, cy)
+  // rotate all the nodes of this graph around centre
   var c = Math.cos(angle), s = Math.sin(angle), x, y, n, i;
   for (i = 0; i < this.nodes.length; i = i + 1) {
     n = this.nodes[i];
     x = n.getX(); y = n.getY();
-    n.setX((x - cx) * c - (y - cy) * s + cx);
-    n.setY((x - cx) * s + (y - cy) * c + cy);
+    n.setX(x * c - y * s);
+    n.setY(x * s + y * c);
   }
 };
 
@@ -478,10 +474,10 @@ function CubicBezierCurve(new_x1, new_y1, new_x2, new_y2, new_x3, new_y3, new_x4
 
 
   this.draw = function (scene) {
-    G3D.add_sphere(scene, x1, y1, 0, 2);
-    G3D.add_sphere(scene, x2, y2, 0, 2);
-    G3D.add_sphere(scene, x3, y3, 0, 2);
-    G3D.add_sphere(scene, x4, y4, 0, 2);
+    G3D.add_sphere(scene, x1, y1, 0, 10);
+    G3D.add_sphere(scene, x2, y2, 0, 10);
+    G3D.add_sphere(scene, x3, y3, 0, 10);
+    G3D.add_sphere(scene, x4, y4, 0, 10);
     G3D.line(scene, x1, y1, 0, x2, y2, 0);
     G3D.line(scene, x2, y2, 0, x3, y3, 0);
     G3D.line(scene, x3, y3, 0, x4, y4, 0);
@@ -758,7 +754,7 @@ var Celtic = (function () {
       canvas,
       width, height,
       colorMode = Const.RGB, // one of RGB or HSB
-      graphRotationAngle = 0,//Math.randomFloat(0, 2 * Math.PI),
+      graphRotationAngle = Math.randomFloat(0, 2 * Math.PI),
       graphParams;
 
     this.color = function (a, b, c) {
@@ -768,23 +764,11 @@ var Celtic = (function () {
     };
 
     // constructor code
-//     canvas = document.getElementById("canvas");
-//     if (canvas) {
-//       this.ctx = canvas.getContext("2d");
-//       this.ctx.lineJoin = "round";
-//       this.ctx.lineCap = "round";
-      width = WIDTH;
-      height = HEIGHT;
-      this.delay = 10; // step delay in microsecs
-      this.step = 0.001; // parameter increment for progressive rendering
-//
-//       // random colour background
-//       this.ctx.fillStyle = "rgb(" + Math.randomInt(100, 255) + ", " + Math.randomInt(100, 255) + ", " + Math.randomInt(100, 255) + ")";
-//       this.ctx.fillRect(0, 0, width, height);
-//
-
-      curve_width = Math.randomFloat(4, 10);
-      shadow_width = curve_width + 4;
+    params.height = params.width;
+    this.delay = 10; // step delay in microsecs
+    this.step = 0.001; // parameter increment for progressive rendering
+    curve_width = Math.randomFloat(4, 10);
+    shadow_width = curve_width + 4;
 
       // if the type is random, then we pick one other type and compute
       // its parameter randomly. Otherwise it is expected that all
@@ -819,25 +803,14 @@ var Celtic = (function () {
         default: console.log("error: graph type out of bounds: " + this.params.type);
         }
       }
-      graphParams = params;
-      graphParams.width = width;
-      graphParams.height = height;
-      this.graph = new Graph(graphParams);
-//      graph.draw(this.ctx);
+      this.graph = new Graph(params);
 
-      this.graph.rotate(graphRotationAngle, width / 2, height / 2);
+      this.graph.rotate(graphRotationAngle);
       this.pattern = new Pattern(this.graph, params.shape1, params.shape2);
       this.pattern.make_curves();
 
       colorMode = Const.HSB;
       this.color(Math.randomInt(0, 256), 200, 200);
-//      this.ctx.lineWidth = curve_width;
-      //  stroke(0, 0, 0);
-      //graph.draw();
-      //  console.log(graph);
-//     } else {
-//       console.log("canvas not supported");
-//     }
   };
 }());
 
@@ -851,10 +824,6 @@ Celtic.prototype = {
       that = this,
       t = 0,
       intervalId;
-    this.ctx.shadowColor = "rgba(0, 0, 0, .5)";
-    this.ctx.shadowOffsetX = 5;
-    this.ctx.shadowOffsetY = 5;
-    this.ctx.shadowBlur = 3;
 
     intervalId = setInterval(
       function () {
