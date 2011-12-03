@@ -25,35 +25,28 @@ var Const = {
 
 //######################################################################
 
-function Node(new_x, new_y) {
+var Node = (function () {
   "use strict";
 
-  var
-    x = new_x,
-    y = new_y,
-    edges = [];
+  return function (new_x, new_y) {
+    this.x = new_x;
+    this.y = new_y;
+    this.edges = [];
 
-  this.getX = function () { return x; };
-  this.getY = function () { return y; };
-  this.getEdges = function () { return edges; };
-  this.setX = function (new_x) { x = new_x; };
-  this.setY = function (new_y) { y = new_y; };
-  this.setEdges = function (new_edges) { edges = new_edges; };
-
-  this.draw = function (scene) {
-    G3D.add_sphere(scene, x, y, 0, 10);
+    this.getX = function () { return this.x; };
+    this.getY = function () { return this.y; };
+    this.getEdges = function () { return this.edges; };
+    this.setX = function (new_x) { this.x = new_x; };
+    this.setY = function (new_y) { this.y = new_y; };
+    this.setEdges = function (new_edges) { this.edges = new_edges; };
+    this.draw = function (scene) { G3D.add_sphere(scene, this.x, this.y, 0, 10); };
+    this.toString = function () { return "Node: {x:" + this.x + ", y:" + this.y + "}"; };
+    this.add_edge = function (e) { this.edges.push(e); };
   };
+}());
 
-  this.toString = function () {
-    return "Node: {x:" + x + ", y:" + y + "}";
-  };
 
-  this.add_edge = function (e) {
-    edges.push(e);
-  };
-}
-
-//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//######################################################################
 
 function Edge(n1, n2) {
   "use strict";
@@ -110,7 +103,7 @@ function Graph(params) {
   "use strict";
 
   var
-    cx, cy, x, y, size, //float
+    x, y, size, //float
     grid, // array of Node
     step, nbcol, nbrow, //int
     edge_size, L, p2x, p2y, nsteps, // for triangle
@@ -172,8 +165,8 @@ function Graph(params) {
   case Graph.TYPE_TRIANGLE:
     edge_size = this.params.triangle_edge_size;
     L = (this.width < this.height ? this.width : this.height) / 2.0; // circumradius of the triangle
-    p2x = (- L * Math.SQRT_3 / 2.0);
-    p2y = (  L / 2.0); /* p2 is the bottom left vertex */
+    p2x = (-L * Math.SQRT_3 / 2.0);
+    p2y = (L / 2.0); /* p2 is the bottom left vertex */
     nsteps = Math.floor(3 * L / (Math.SQRT_3 * edge_size));
     grid = []; //new Array((nsteps + 1) * (nsteps + 1));
 
@@ -428,10 +421,8 @@ EdgeCoupleArray.prototype = {
   }
 };
 
-
-
-
 //######################################################################
+
 var EdgeDirection = (function () {
   "use strict";
   return function (newEdge, newDirection) {
@@ -751,11 +742,8 @@ var Celtic = (function () {
   return function (params) {
     var
       curve_width, shadow_width,
-      canvas,
-      width, height,
       colorMode = Const.RGB, // one of RGB or HSB
-      graphRotationAngle = Math.randomFloat(0, 2 * Math.PI),
-      graphParams;
+      graphRotationAngle = Math.randomFloat(0, 2 * Math.PI);
 
     this.color = function (a, b, c) {
       switch (this.colorMode) {
@@ -770,47 +758,46 @@ var Celtic = (function () {
     curve_width = Math.randomFloat(4, 10);
     shadow_width = curve_width + 4;
 
-      // if the type is random, then we pick one other type and compute
-      // its parameter randomly. Otherwise it is expected that all
-      // parameters are set in the UI and have been retrieved in params
-      if (params.type === Graph.TYPE_RANDOM) {
-        params.type = Math.randomInt(1, 5);
-
-        switch (params.type) {
-        case Graph.TYPE_POLAR:
-          params.nb_orbits = Math.randomInt(2, 11);
-          params.nb_nodes_per_orbit = Math.randomInt(4, 13);
-          break;
-        case Graph.TYPE_TGRID:
-          params.shape1 = -Math.randomFloat(0.3, 1.2);
-          params.shape2 = -Math.randomFloat(0.3, 1.2);
-          params.edge_size = Math.randomFloat(50, 90);
-          break;
-        case Graph.TYPE_KENNICOTT:
-          params.shape1 = Math.randomFloat(-1, 1);
-          params.shape2 = Math.randomFloat(-1, 1);
-          params.edge_size = Math.randomFloat(70, 90);
-          params.kennicott_cluster_size = params.edge_size / Math.randomFloat(3, 12) - 1;
-          break;
-        case Graph.TYPE_TRIANGLE:
-          params.edge_size = Math.randomFloat(60, 100);
-          params.margin = Math.randomFloat(-900, 0);
-          break;
-        case Graph.TYPE_CUSTOM:
-          params.nb_orbits = Math.randomInt(2, 11);
-          params.nb_nodes_per_orbit = Math.randomInt(4, 13);
-          break;
-        default: console.log("error: graph type out of bounds: " + this.params.type);
-        }
+    // if the type is random, then we pick one other type and compute
+    // its parameter randomly. Otherwise it is expected that all
+    // parameters are set in the UI and have been retrieved in params
+    if (params.type === Graph.TYPE_RANDOM) {
+      params.type = Math.randomInt(1, 5);
+      switch (params.type) {
+      case Graph.TYPE_POLAR:
+        params.nb_orbits = Math.randomInt(2, 11);
+        params.nb_nodes_per_orbit = Math.randomInt(4, 13);
+        break;
+      case Graph.TYPE_TGRID:
+        params.shape1 = -Math.randomFloat(0.3, 1.2);
+        params.shape2 = -Math.randomFloat(0.3, 1.2);
+        params.edge_size = Math.randomFloat(50, 90);
+        break;
+      case Graph.TYPE_KENNICOTT:
+        params.shape1 = Math.randomFloat(-1, 1);
+        params.shape2 = Math.randomFloat(-1, 1);
+        params.edge_size = Math.randomFloat(70, 90);
+        params.kennicott_cluster_size = params.edge_size / Math.randomFloat(3, 12) - 1;
+        break;
+      case Graph.TYPE_TRIANGLE:
+        params.edge_size = Math.randomFloat(60, 100);
+        params.margin = Math.randomFloat(-900, 0);
+        break;
+      case Graph.TYPE_CUSTOM:
+        params.nb_orbits = Math.randomInt(2, 11);
+        params.nb_nodes_per_orbit = Math.randomInt(4, 13);
+        break;
+      default: console.log("error: graph type out of bounds: " + this.params.type);
       }
-      this.graph = new Graph(params);
+    }
+    this.graph = new Graph(params);
 
-      this.graph.rotate(graphRotationAngle);
-      this.pattern = new Pattern(this.graph, params.shape1, params.shape2);
-      this.pattern.make_curves();
+    this.graph.rotate(graphRotationAngle);
+    this.pattern = new Pattern(this.graph, params.shape1, params.shape2);
+    this.pattern.make_curves();
 
-      colorMode = Const.HSB;
-      this.color(Math.randomInt(0, 256), 200, 200);
+    colorMode = Const.HSB;
+    this.color(Math.randomInt(0, 256), 200, 200);
   };
 }());
 
