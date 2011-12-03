@@ -389,35 +389,30 @@ Graph.TYPE_POLAR = 3;
 Graph.TYPE_KENNICOTT = 4;
 Graph.TYPE_CUSTOM = 5;
 
+//######################################################################
 
 var EdgeCoupleArray = (function () {
   "use strict";
-  var i;
   return function (nb_edges) {
-    this.size = nb_edges;
-    this.array = []; //new Array(this.size);
-    for (i = 0; i < this.size; i = i + 1) {
-      this.array[i] = []; //new Array(2);
-      this.array[i][Const.CLOCKWISE] = 0;
-      this.array[i][Const.ANTICLOCKWISE] = 0;
+    var  i, array = []; //new Array(this.size);
+    for (i = 0; i < nb_edges; i++) {
+      array[i] = []; //new Array(2);
+      array[i][Const.CLOCKWISE] = 0;
+      array[i][Const.ANTICLOCKWISE] = 0;
     }
+    this.getSize = function () { return nb_edges; };
+    this.getArray = function () { return array; },
+    this.toString = function () {
+      var i, s = ["EdgeCoupleArray"];
+      for (i = 0; i < nb_edges; i++) {
+        s.push(array[i][Const.CLOCKWISE]);
+        s.push(array[i][Const.ANTICLOCKWISE]);
+        s.push(",");
+      }
+      return s.join('');
+    };
   };
 }());
-
-EdgeCoupleArray.prototype = {
-  getSize: function () { "use strict"; return this.size; },
-  getArray: function () { "use strict"; return this.array; },
-  toString: function () {
-    "use strict";
-    var i, s = ["EdgeCoupleArray"];
-    for (i = 0; i < this.size; i = i + 1) {
-      s.push(this.array[i][Const.CLOCKWISE]);
-      s.push(this.array[i][Const.ANTICLOCKWISE]);
-      s.push(",");
-    }
-    return s.join('');
-  }
-};
 
 //######################################################################
 
