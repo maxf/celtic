@@ -28,20 +28,18 @@ var Const = {
 var Node = (function () {
   "use strict";
 
-  return function (new_x, new_y) {
-    this.x = new_x;
-    this.y = new_y;
-    this.edges = [];
+  return function (x, y) {
+    var edges = [];
 
-    this.getX = function () { return this.x; };
-    this.getY = function () { return this.y; };
-    this.getEdges = function () { return this.edges; };
-    this.setX = function (new_x) { this.x = new_x; };
-    this.setY = function (new_y) { this.y = new_y; };
-    this.setEdges = function (new_edges) { this.edges = new_edges; };
-    this.draw = function (scene) { G3D.add_sphere(scene, this.x, this.y, 0, 10); };
-    this.toString = function () { return "Node: {x:" + this.x + ", y:" + this.y + "}"; };
-    this.add_edge = function (e) { this.edges.push(e); };
+    this.getX = function () { return x; };
+    this.getY = function () { return y; };
+    this.getEdges = function () { return edges; };
+    this.setX = function (new_x) { x = new_x; };
+    this.setY = function (new_y) { y = new_y; };
+    this.setEdges = function (new_edges) { edges = new_edges; };
+    this.draw = function (scene) { G3D.add_sphere(scene, x, y, 0, 10); };
+    this.toString = function () { return "Node: {x:" + x + ", y:" + y + "}"; };
+    this.add_edge = function (e) { edges.push(e); };
   };
 }());
 
