@@ -418,22 +418,14 @@ var EdgeCoupleArray = (function () {
 
 var EdgeDirection = (function () {
   "use strict";
-  return function (newEdge, newDirection) {
-    this.edge = newEdge;
-    this.direction = newDirection;
+  return function (edge, direction) {
+    this.getEdge = function () { return edge; };
+    this.setEdge = function (newEdge) { edge = newEdge; };
+    this.getDirection = function () { return direction; };
+    this.setDirection = function (newDirection) { direction = newDirection; };
+    this.toString =  function () { return "EdgeDirection {e: " + edge + ", d:" + (direction === Const.ANTICLOCKWISE ? "ANTICLOCKWISE" : "CLOCKWISE") + "}"; };
   };
 }());
-
-EdgeDirection.prototype = {
-  getEdge: function () { "use strict"; return this.edge; },
-  setEdge: function (edge) { "use strict"; this.edge = edge; },
-  getDirection: function () { "use strict"; return this.direction; },
-  setDirection: function (direction) { "use strict"; this.direction = direction; },
-  toString: function () {
-    "use strict";
-    return "EdgeDirection {e: " + this.edge + ", d:" + (this.direction === Const.ANTICLOCKWISE ? "ANTICLOCKWISE" : "CLOCKWISE") + "}";
-  }
-};
 
 //######################################################################
 
