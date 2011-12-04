@@ -5,16 +5,15 @@ var G3D; // externals
 Math.SQRT_3 = 1.73205080756887729352;
 Math.randomFloat = function (min, max) {
   "use strict";
-  // return a number in [min, max[
-  // <http://processing.org/reference/random_.html>
+  // return a random number in [min, max[
   return Math.random() * (max - min) + min;
 };
 
 Math.randomInt = function (min, max) {
+  // return a random integer in [min, max[
   "use strict";
-  return Math.floor(Math.random() * (max - min) + min);
+  return Math.floor(Math.randomFloat(min, max));
 };
-
 
 var Const = {
   ANTICLOCKWISE: 0,
@@ -30,7 +29,6 @@ var Node = (function () {
 
   return function (x, y) {
     var edges = [];
-
     this.getX = function () { return x; };
     this.getY = function () { return y; };
     this.getEdges = function () { return edges; };
@@ -49,7 +47,7 @@ var Node = (function () {
 var Edge = (function () {
   "use strict";
   return function Edge(node1, node2) {
-    var  angle1, angle2;
+    var angle1, angle2;
 
     angle1 = Math.atan2(node2.getY() - node1.getY(), node2.getX() - node1.getX());
     if (angle1 < 0) { angle1 += 2 * Math.PI; }
@@ -65,7 +63,11 @@ var Edge = (function () {
     };
 
     this.toString = function () {
-      return "Edge: {node1: " + node1 + ", node2: " + node2 + ", angle1: " + (angle(node1) * 180 / Math.PI) + ", angle2: " + (angle(node2) * 180 / Math.PI) + "}";
+      return "Edge: {node1: " + node1 + ", node2: " + node2 + ", angle1: " + (this.angle(node1) * 180 / Math.PI) + ", angle2: " + (this.angle(node2) * 180 / Math.PI) + "}";
+    };
+
+    this.otherNode = function (n) {
+      if (n === node1) { return node2; } else { return node1; }
     };
 
     this.angle = function (n) {
@@ -73,11 +75,7 @@ var Edge = (function () {
       if (n === node1) { return angle1; } else { return angle2; }
     };
 
-    this.other_node = function (n) {
-      if (n === node1) { return node2; } else { return node1; }
-    };
-
-    this.angle_to = function (e2, node, direction) {
+    this.angleTo = function (e2, node, direction) {
       /* returns the absolute angle from this edge to "edge2" around
        "node" following "direction" */
       var a;
@@ -93,7 +91,7 @@ var Edge = (function () {
 
 //######################################################################
 
-var Graph = (function() {
+var Graph = (function () {
   "use strict";
   return function (params) {
     var
@@ -104,19 +102,18 @@ var Graph = (function() {
       nbp, nbo, os, o, p, row, col, // for polar
       cluster_size, ci, // for kennicott
       node1, node2, node3, // for custom graph type
+      nodes = [], edges = [], xmin, ymin,
 
-    nodes = [], edges = [], xmin, ymin;
+      add_edge = function (edge) {
+        edges.push(edge);
+        // for each node of edge 'edge', add it to 'e'
+        edge.getNode1().add_edge(edge);
+        edge.getNode2().add_edge(edge);
+      },
 
-    var add_edge = function (edge) {
-      edges.push(edge);
-      // for each node of edge 'edge', add it to 'e'
-      edge.getNode1().add_edge(edge);
-      edge.getNode2().add_edge(edge);
-    };
-
-    var add_node = function (node) {
-      nodes.push(node);
-    };
+      add_node = function (node) {
+        nodes.push(node);
+      };
 
     switch (params.type) {
     case Graph.TYPE_POLAR:
@@ -127,16 +124,16 @@ var Graph = (function() {
 
       add_node(grid[0] = new Node(0, 0));
 
-      for (o = 0; o < nbo; o = o + 1) {
-        for (p = 0; p < nbp; p = p + 1) {
+      for (o = 0; o < nbo; o += 1) {
+        for (p = 0; p < nbp; p += 1) {
           add_node(grid[1 + o * nbp + p] = new Node((o + 1) * os * Math.sin(p * 2 * Math.PI / nbp),
                                                     (o + 1) * os * Math.cos(p * 2 * Math.PI / nbp)));
         }
       }
 
       // generate edges
-      for (o = 0; o < nbo; o = o + 1) {
-        for (p = 0; p < nbp; p = p + 1) {
+      for (o = 0; o < nbo; o += 1) {
+        for (p = 0; p < nbp; p += 1) {
           if (o === 0) {
             // link first orbit nodes with centre
             add_edge(new Edge(grid[1 + o * nbp + p], grid[0]));
@@ -158,8 +155,8 @@ var Graph = (function() {
       grid = []; //new Array((nsteps + 1) * (nsteps + 1));
 
       // create node grid
-      for (row = 0; row <= nsteps; row = row + 1) {
-        for (col = 0; col <= nsteps; col = col + 1) {
+      for (row = 0; row <= nsteps; row += 1) {
+        for (col = 0; col <= nsteps; col += 1) {
           if (row + col <= nsteps) {
             x = p2x + col * L * Math.SQRT_3 / nsteps + row * L * Math.SQRT_3 / (2 * nsteps);
             y = p2y - row * 3 * L / (2 * nsteps);
@@ -169,8 +166,8 @@ var Graph = (function() {
         }
       }
       // create edges
-      for (row = 0; row < nsteps; row = row + 1) {
-        for (col = 0; col < nsteps; col = col + 1) {
+      for (row = 0; row < nsteps; row += 1) {
+        for (col = 0; col < nsteps; col += 1) {
           if (row + col < nsteps) {
             // horizontal edges
             add_edge(new Edge(grid[row + col * (nsteps + 1)], grid[row + (col + 1) * (nsteps + 1)]));
@@ -205,8 +202,8 @@ var Graph = (function() {
       ymin += (params.height - (nbrow - 1) * step) / 2;
 
       /* create node grid */
-      for (row = 0; row < nbrow; row = row + 1) {
-        for (col = 0; col < nbcol; col = col + 1) {
+      for (row = 0; row < nbrow; row += 1) {
+        for (col = 0; col < nbcol; col += 1) {
           ci = 5 * (row + col * nbrow);
           x = col * step + xmin;
           y = row * step + ymin;
@@ -237,8 +234,8 @@ var Graph = (function() {
       }
 
       // create inter-cluster edges
-      for (row = 0; row < nbrow; row = row + 1) {
-        for (col = 0; col < nbcol; col = col + 1) {
+      for (row = 0; row < nbrow; row += 1) {
+        for (col = 0; col < nbcol; col += 1) {
           if (col !== nbcol - 1) {
             // horizontal edge from edge 1 of cluster (row, col) to edge 3
             // of cluster (row, col + 1)
@@ -276,8 +273,8 @@ var Graph = (function() {
       ymin += (params.height - (nbrow - 1) * step) / 2;
 
       /* create node grid */
-      for (row = 0; row < nbrow; row = row + 1) {
-        for (col = 0; col < nbcol; col = col + 1) {
+      for (row = 0; row < nbrow; row += 1) {
+        for (col = 0; col < nbcol; col += 1) {
           x = col * step + xmin;
           y = row * step + ymin;
           grid[row + col * nbrow] = new Node(x, y);
@@ -285,8 +282,8 @@ var Graph = (function() {
         }
       }
       /* create edges */
-      for (row = 0; row < nbrow; row = row + 1) {
-        for (col = 0; col < nbcol; col = col + 1) {
+      for (row = 0; row < nbrow; row += 1) {
+        for (col = 0; col < nbcol; col += 1) {
           if (col !== nbcol - 1) {
             add_edge(new Edge(grid[row + col * nbrow], grid[row + (col + 1) * nbrow]));
           }
@@ -322,10 +319,10 @@ var Graph = (function() {
         next_edge, edgeCandidate,
         edgesAroundNode = theNode.getEdges(),
         i;
-      for (i = 0; i < edgesAroundNode.length; i = i + 1) {
+      for (i = 0; i < edgesAroundNode.length; i += 1) {
         edgeCandidate = edgesAroundNode[i];
         if (edgeCandidate !== theEdge) {
-          angle = theEdge.angle_to(edgeCandidate, theNode, theDirection);
+          angle = theEdge.angleTo(edgeCandidate, theNode, theDirection);
           if (angle < minangle) {
             next_edge = edgeCandidate;
             minangle = angle;
@@ -337,23 +334,23 @@ var Graph = (function() {
 
     this.draw = function (scene) {
       var i;
-      for (i = 0; i < nodes.length; i = i + 1) { nodes[i].draw(scene); }
-      for (i = 0; i < edges.length; i = i + 1) { edges[i].draw(scene); }
+      for (i = 0; i < nodes.length; i += 1) { nodes[i].draw(scene); }
+      for (i = 0; i < edges.length; i += 1) { edges[i].draw(scene); }
     };
 
     this.toString = function () {
       var i, s = "Graph: ";
       s += "\n- " + nodes.length + " nodes: ";
-      for (i = 0; i < nodes.length; i = i + 1) { s += nodes[i] + ", "; }
+      for (i = 0; i < nodes.length; i += 1) { s += nodes[i] + ", "; }
       s += "\n- " + edges.length + " edges: ";
-      for (i = 0; i < edges.length; i = i + 1) { s += edges[i] + ", "; }
+      for (i = 0; i < edges.length; i += 1) { s += edges[i] + ", "; }
       return s;
     };
 
     this.rotate = function (angle) {
       // rotate all the nodes of this graph around centre
       var c = Math.cos(angle), s = Math.sin(angle), x, y, n, i;
-      for (i = 0; i < nodes.length; i = i + 1) {
+      for (i = 0; i < nodes.length; i += 1) {
         n = nodes[i];
         x = n.getX(); y = n.getY();
         n.setX(x * c - y * s);
@@ -378,16 +375,16 @@ var EdgeCoupleArray = (function () {
   "use strict";
   return function (nb_edges) {
     var  i, array = []; //new Array(this.size);
-    for (i = 0; i < nb_edges; i++) {
+    for (i = 0; i < nb_edges; i += 1) {
       array[i] = []; //new Array(2);
       array[i][Const.CLOCKWISE] = 0;
       array[i][Const.ANTICLOCKWISE] = 0;
     }
     this.getSize = function () { return nb_edges; };
-    this.getArray = function () { return array; },
+    this.getArray = function () { return array; };
     this.toString = function () {
       var i, s = ["EdgeCoupleArray"];
-      for (i = 0; i < nb_edges; i++) {
+      for (i = 0; i < nb_edges; i += 1) {
         s.push(array[i][Const.CLOCKWISE]);
         s.push(array[i][Const.ANTICLOCKWISE]);
         s.push(",");
@@ -454,9 +451,11 @@ var Point = (function () {
 
 var PointIndex = (function () {
   "use strict";
-  return function (x,y,i) {
-    this.getPoint = function () { return p; };
-    this.toString = function () { return "PointIndex {point: " + p + ", index: " + i + "}"; };
+  return function (x, y, i) {
+    this.getX = function () { return x; };
+    this.getY = function () { return y; };
+    this.getIndex = function () { return i; };
+    this.toString = function () { return "PointIndex {x: " + x + ", y: " + y + ", index: " + i + "}"; };
   };
 }());
 
@@ -485,19 +484,19 @@ var Spline = (function () {
       pi = new PointIndex(ss.getX1() * (1 - tt) * (1 - tt) * (1 - tt) + 3 * ss.getX2() * tt * (1 - tt) * (1 - tt) + 3 * ss.getX3() * tt * tt * (1 - tt) + ss.getX4() * tt * tt * tt,
                           ss.getY1() * (1 - tt) * (1 - tt) * (1 - tt) + 3 * ss.getY2() * tt * (1 - tt) * (1 - tt) + 3 * ss.getY3() * tt * tt * (1 - tt) + ss.getY4() * tt * tt * tt,
                           si);
-     return pi;
+      return pi;
     };
 
     this.draw = function (scene) {
       var i;
-      for (i = 0; i < segments.length; i = i + 1) {
+      for (i = 0; i < segments.length; i += 1) {
         segments[i].draw(scene);
       }
     };
 
     this.toString = function () {
       var i, s = [];
-      for (i = 0; i < segments.length; i = i + 1) {
+      for (i = 0; i < segments.length; i += 1) {
         s.push(segments[i].toString());
       }
       return "Spline: { " + segments.length + " segments (" + s.join(",") + ") }";
@@ -512,100 +511,99 @@ var Pattern = (function () {
   "use strict";
 
   return function (graph, shape1, shape2) {
-  var
-    splines = [],
-    ec = new EdgeCoupleArray(graph.getEdges().length),
-    i;
-
-    var edge_couple_set = function (edgeDirection, value) {
-      var i, graphEdges = graph.getEdges();
-      for (i = 0; i < graphEdges.length; i = i + 1) {
-        if (graphEdges[i] === edgeDirection.getEdge()) {
-          ec.getArray()[i][edgeDirection.getDirection()] = value;
-          break;
-        }
-      }
-    };
-
-    // Add a cubic Bezier curve segment to a spline (s)
-    var addBezierCurve = function (s, node, edge1, edge2, direction) {
-      // Parameters:
-      // - s: the spline to add the Bezier to
-      // - node: a node
-      // - edge1: an edge which must include 'node' as one of its nodes
-      // - edge2: ditto
-      // - direction: whether the bezier should go clockwise or anticlockwise around the node
-      //
-      //   *----------------- * --------------*
-      //         edge1      node   edge2
-
-
-      // The 4 control points are:
-      // (x1, y1) the midpoint of edge1
-      // (x2, y2) a complicated function of the pattern's shape parameters, the direction, and the angle between edge1 and edge2
-      // (x3, y3) ditto.
-      // (x4, y4) the midpoint of edge2
-
-  //    console.log("addBezierCurve(s :" + s + ", node: " + node + ", edge1: " + edge1 + ", edge2: " + edge2 + ", direction: " + direction);
-
-      var
-        x1 = (edge1.getNode1().getX() + edge1.getNode2().getX()) / 2.0,
-        y1 = (edge1.getNode1().getY() + edge1.getNode2().getY()) / 2.0,
-        x4 = (edge2.getNode1().getX() + edge2.getNode2().getX()) / 2.0,
-        y4 = (edge2.getNode1().getY() + edge2.getNode2().getY()) / 2.0,
-        alpha = edge1.angle_to(edge2, node, direction) * shape1,
-        beta = shape2,
-        i1x, i1y, i2x, i2y, x2, y2, x3, y3;
-
-      switch (direction) {
-      case Const.ANTICLOCKWISE:
-        // (i1x, i2x) must stick out to the left of NP1 and I2 to the right of NP4
-        i1x =  alpha * (node.getY() - y1) + x1;
-        i1y = -alpha * (node.getX() - x1) + y1;
-        i2x = -alpha * (node.getY() - y4) + x4;
-        i2y =  alpha * (node.getX() - x4) + y4;
-        x2 =  beta * (y1 - i1y) + i1x;
-        y2 = -beta * (x1 - i1x) + i1y;
-        x3 = -beta * (y4 - i2y) + i2x;
-        y3 =  beta * (x4 - i2x) + i2y;
-        break;
-      case Const.CLOCKWISE:
-        // I1 must stick out to the left of NP1 and I2 to the right of NP4
-        i1x = -alpha * (node.getY() - y1) + x1;
-        i1y =  alpha * (node.getX() - x1) + y1;
-        i2x =  alpha * (node.getY() - y4) + x4;
-        i2y = -alpha * (node.getX() - x4) + y4;
-        x2 = -beta * (y1 - i1y) + i1x;
-        y2 =  beta * (x1 - i1x) + i1y;
-        x3 =  beta * (y4 - i2y) + i2x;
-        y3 = -beta * (x4 - i2x) + i2y;
-        break;
-      default:
-        console.log("Error in addBezierCurve: direction is neither CLOCKWISE nor ANTICLOCKWISE: " + direction);
-      }
-      //console.log("adding Bezier (" + x1 + "," + y1 + " -- " + x2 + "," + y2 + " -- " + x3 + "," + y3 + " -- " + x4 + "," + y4 + ")");
-      return s.add_segment(x1, y1, x2, y2, x3, y3, x4, y4);
-    };
-
-
-    var next_unfilled_couple = function () {
-      var i, ed = null; //EdgeDirection
-      for (i = 0; i < ec.getSize(); i = i + 1) {
-        if (ec.getArray()[i][Const.CLOCKWISE] === 0) {
-          ed = new EdgeDirection(graph.getEdges()[i], Const.CLOCKWISE);
-          return ed;
-        } else {
-          if (ec.getArray()[i][Const.ANTICLOCKWISE] === 0) {
-            ed = new EdgeDirection(graph.getEdges()[i], Const.ANTICLOCKWISE);
-            return ed;
+    var
+      splines = [],
+      ec = new EdgeCoupleArray(graph.getEdges().length),
+      i,
+      edge_couple_set = function (edgeDirection, value) {
+        var i, graphEdges = graph.getEdges();
+        for (i = 0; i < graphEdges.length; i += 1) {
+          if (graphEdges[i] === edgeDirection.getEdge()) {
+            ec.getArray()[i][edgeDirection.getDirection()] = value;
+            break;
           }
         }
-      }
-      return ed; // possibly null if no edge found
-    };
+      },
+
+      // Add a cubic Bezier curve segment to a spline (s)
+      addBezierCurve = function (s, node, edge1, edge2, direction) {
+        // Parameters:
+        // - s: the spline to add the Bezier to
+        // - node: a node
+        // - edge1: an edge which must include 'node' as one of its nodes
+        // - edge2: ditto
+        // - direction: whether the bezier should go clockwise or anticlockwise around the node
+        //
+        //   *----------------- * --------------*
+        //         edge1      node   edge2
+
+
+        // The 4 control points are:
+        // (x1, y1) the midpoint of edge1
+        // (x2, y2) a complicated function of the pattern's shape parameters, the direction, and the angle between edge1 and edge2
+        // (x3, y3) ditto.
+        // (x4, y4) the midpoint of edge2
+
+    //    console.log("addBezierCurve(s :" + s + ", node: " + node + ", edge1: " + edge1 + ", edge2: " + edge2 + ", direction: " + direction);
+
+        var
+          x1 = (edge1.getNode1().getX() + edge1.getNode2().getX()) / 2.0,
+          y1 = (edge1.getNode1().getY() + edge1.getNode2().getY()) / 2.0,
+          x4 = (edge2.getNode1().getX() + edge2.getNode2().getX()) / 2.0,
+          y4 = (edge2.getNode1().getY() + edge2.getNode2().getY()) / 2.0,
+          alpha = edge1.angleTo(edge2, node, direction) * shape1,
+          beta = shape2,
+          i1x, i1y, i2x, i2y, x2, y2, x3, y3;
+
+        switch (direction) {
+        case Const.ANTICLOCKWISE:
+          // (i1x, i2x) must stick out to the left of NP1 and I2 to the right of NP4
+          i1x =  alpha * (node.getY() - y1) + x1;
+          i1y = -alpha * (node.getX() - x1) + y1;
+          i2x = -alpha * (node.getY() - y4) + x4;
+          i2y =  alpha * (node.getX() - x4) + y4;
+          x2 =  beta * (y1 - i1y) + i1x;
+          y2 = -beta * (x1 - i1x) + i1y;
+          x3 = -beta * (y4 - i2y) + i2x;
+          y3 =  beta * (x4 - i2x) + i2y;
+          break;
+        case Const.CLOCKWISE:
+          // I1 must stick out to the left of NP1 and I2 to the right of NP4
+          i1x = -alpha * (node.getY() - y1) + x1;
+          i1y =  alpha * (node.getX() - x1) + y1;
+          i2x =  alpha * (node.getY() - y4) + x4;
+          i2y = -alpha * (node.getX() - x4) + y4;
+          x2 = -beta * (y1 - i1y) + i1x;
+          y2 =  beta * (x1 - i1x) + i1y;
+          x3 =  beta * (y4 - i2y) + i2x;
+          y3 = -beta * (x4 - i2x) + i2y;
+          break;
+        default:
+          console.log("Error in addBezierCurve: direction is neither CLOCKWISE nor ANTICLOCKWISE: " + direction);
+        }
+        //console.log("adding Bezier (" + x1 + "," + y1 + " -- " + x2 + "," + y2 + " -- " + x3 + "," + y3 + " -- " + x4 + "," + y4 + ")");
+        return s.add_segment(x1, y1, x2, y2, x3, y3, x4, y4);
+      },
+
+
+      next_unfilled_couple = function () {
+        var i, ed = null; //EdgeDirection
+        for (i = 0; i < ec.getSize(); i += 1) {
+          if (ec.getArray()[i][Const.CLOCKWISE] === 0) {
+            ed = new EdgeDirection(graph.getEdges()[i], Const.CLOCKWISE);
+            return ed;
+          } else {
+            if (ec.getArray()[i][Const.ANTICLOCKWISE] === 0) {
+              ed = new EdgeDirection(graph.getEdges()[i], Const.ANTICLOCKWISE);
+              return ed;
+            }
+          }
+        }
+        return ed; // possibly null if no edge found
+      };
 
     this.draw = function (ctx) {
-      for (i = 0; i < splines.length; i = i + 1) {
+      for (i = 0; i < splines.length; i += 1) {
         ctx.strokeStyle = "rgb(" + Math.randomInt(0, 255) + "," + Math.randomInt(0, 255) + "," + Math.randomInt(0, 255) + ")";
         splines[i].draw(ctx);
       }
@@ -613,7 +611,7 @@ var Pattern = (function () {
 
     this.toString = function () {
       var i, result = "Pattern: { " + splines.length + " splines: [";
-      for (i = 0; i < splines.length; i = i + 1) {
+      for (i = 0; i < splines.length; i += 1) {
         result += splines[i];
       }
       return result + "]}";
@@ -653,7 +651,7 @@ var Pattern = (function () {
 
           // cross the edge
           current_edge_direction.setEdge(next_edge);
-          current_node = next_edge.other_node(current_node);
+          current_node = next_edge.otherNode(current_node);
           current_edge_direction.setDirection(1 - current_edge_direction.getDirection());
 
   //        console.log("current e_d: " + current_edge_direction);
@@ -686,6 +684,36 @@ var Celtic = (function () {
       switch (this.colorMode) {
       case Const.RGB: this.r = a; this.g = b; this.b = c; break;
       }
+    };
+
+    this.getGraph = function () { return this.graph; };
+    this.draw = function () {
+      var
+        that = this,
+        t = 0,
+        intervalId;
+
+      intervalId = setInterval(
+        function () {
+          var t2, pi1, pi2, i, s, splines = that.pattern.getSplines();
+          if (t >= 1.0) {
+            clearInterval(intervalId);
+          } else {
+            t2 = (t + that.step > 1.0) ? 1.0 : t + that.step;
+            for (i = 0; i < splines.length; i += 1) {
+              s = splines[i];
+              if (s !== null) {
+                that.ctx.strokeStyle = "rgb(" + s.getRed() + "," + s.getGreen() + "," + s.getBlue() + ")";
+                pi1 = s.value_at(t);
+                pi2 = s.value_at(t2);
+                G3D.line(that.scene, pi1.getX(), pi1.getY(), 0, pi2.getX(), pi2.getY(), 0);
+              }
+            }
+            t = t2;
+          }
+        },
+        this.delay
+      );
     };
 
     // constructor code
@@ -737,40 +765,3 @@ var Celtic = (function () {
     this.color(Math.randomInt(0, 256), 200, 200);
   };
 }());
-
-
-// public methods
-Celtic.prototype = {
-  getGraph: function () { "use strict"; return this.graph; },
-  draw: function () {
-    "use strict";
-    var
-      that = this,
-      t = 0,
-      intervalId;
-
-    intervalId = setInterval(
-      function () {
-        var t2, pi1, pi2, i, s, p1, p2, splines = that.pattern.getSplines();
-        if (t >= 1.0) {
-          clearInterval(intervalId);
-        } else {
-          t2 = (t + that.step > 1.0) ? 1.0 : t + that.step;
-          for (i = 0; i < splines.length; i = i + 1) {
-            s = splines[i];
-            if (s !== null) {
-              that.ctx.strokeStyle = "rgb(" + s.getRed() + "," + s.getGreen() + "," + s.getBlue() + ")";
-              pi1 = s.value_at(t);
-              pi2 = s.value_at(t2);
-              p1 = pi1.getPoint();
-              p2 = pi2.getPoint();
-              G3D.line(that.scene, p1.getX(), p1.getY(), 0, p2.getX(), p2.getY(), 0);
-            }
-          }
-          t = t2;
-        }
-      },
-      this.delay
-    );
-  }
-};
