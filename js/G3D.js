@@ -20,10 +20,10 @@ var G3D = {
 
     scene.add(cylinder);
 
-    console.log("adding cylinder: (" + x1 + "," + y1 + "," + z1 + " /  " + x2 + "," + y2 + "," + z2  + ")");
-    console.log("height: " + height);
-    console.log("rx: " + cylinder.rotation.x);
-    console.log("ry: " + cylinder.rotation.y);
+//    console.log("adding cylinder: (" + x1 + "," + y1 + "," + z1 + " /  " + x2 + "," + y2 + "," + z2  + ")");
+//    console.log("height: " + height);
+//    console.log("rx: " + cylinder.rotation.x);
+//    console.log("ry: " + cylinder.rotation.y);
   },
 
   add_sphere: function (scene, cx, cy, cz, radius) {
@@ -40,6 +40,6 @@ var G3D = {
     sphere.position.z = cz;
     scene.add(sphere);
 
-    console.log("adding sphere: (" + cx + "," + cy + "," + cz + " /  " + radius + ")");
+//    console.log("adding sphere: (" + cx + "," + cy + "," + cz + " /  " + radius + ")");
   }
 };
