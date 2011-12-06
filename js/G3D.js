@@ -3,12 +3,12 @@ var G3D = {
     "use strict";
 
     var
-      radiusTop = 2,
-      radiusBottom = 2,
+      radiusTop = 10,
+      radiusBottom = 10,
       height =  Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1)),
       cylinderMaterial = new THREE.MeshLambertMaterial({color: 0xAAAACC}),
-      segmentsRadius = 10,
-      segmentsHeight = 10,
+      segmentsRadius = 3,
+      segmentsHeight = 1,
       openEnded = true,
       cylinder = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segmentsRadius, segmentsHeight, openEnded), cylinderMaterial);
 

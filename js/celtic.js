@@ -46,6 +46,7 @@ var Node = (function () {
 
 var Edge = (function () {
   "use strict";
+
   return function Edge(node1, node2) {
     var angle1, angle2;
 
@@ -475,6 +476,7 @@ var Spline = (function () {
       segments.push(bezier);
       return bezier;
     };
+
     this.value_at = function (t) {
       var si, tt, ss, pi;
       si = Math.floor(t * segments.length);
@@ -487,10 +489,20 @@ var Spline = (function () {
       return pi;
     };
 
-    this.draw = function (scene) {
-      var i;
-      for (i = 0; i < segments.length; i += 1) {
-        segments[i].draw(scene);
+    this.draw = function (scene, justTheControlPoints) {
+      var i, t, pStart, pEnd;
+      if (justTheControlPoints) {
+        for (i = 0; i < segments.length; i += 1) {
+          segments[i].draw(scene);
+        }
+      } else {
+        for (t = 0; t <= 1.0; t += 0.001) {
+          pStart = this.value_at(t);
+          pEnd = this.value_at(t + 0.001);
+          G3D.line(scene,
+                   pStart.getX(), pStart.getY(), 0,
+                   pEnd.getX(), pEnd.getY(), 0);
+        }
       }
     };
 
@@ -602,10 +614,9 @@ var Pattern = (function () {
         return ed; // possibly null if no edge found
       };
 
-    this.draw = function (ctx) {
+    this.draw = function (scene, justTheControlPoints) {
       for (i = 0; i < splines.length; i += 1) {
-        ctx.strokeStyle = "rgb(" + Math.randomInt(0, 255) + "," + Math.randomInt(0, 255) + "," + Math.randomInt(0, 255) + ")";
-        splines[i].draw(ctx);
+        splines[i].draw(scene, justTheControlPoints);
       }
     };
 
@@ -687,6 +698,7 @@ var Celtic = (function () {
     };
 
     this.getGraph = function () { return this.graph; };
+
     this.draw = function () {
       var
         that = this,
