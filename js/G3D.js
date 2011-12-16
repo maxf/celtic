@@ -1,4 +1,5 @@
-var G3D = {
+/*jslint devel: true, browser: true, maxerr: 50, indent: 2 */
+var THREE, G3D = {
   line: function (scene, x1, y1, z1, x2, y2, z2) {
     "use strict";
 
@@ -6,7 +7,7 @@ var G3D = {
       radiusTop = 10,
       radiusBottom = 10,
       height =  Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1)),
-      cylinderMaterial = new THREE.MeshLambertMaterial({color: 0xAAAACC}),
+      cylinderMaterial = new THREE.MeshLambertMaterial({color : 0xAAAACC}),
       segmentsRadius = 3,
       segmentsHeight = 1,
       openEnded = true,
@@ -32,7 +33,7 @@ var G3D = {
     var
       segments = 16,
       rings = 16,
-      sphereMaterial = new THREE.MeshLambertMaterial({color: 0xCC0000}),
+      sphereMaterial = new THREE.MeshLambertMaterial({color : 0xCC0000}),
       sphere = new THREE.Mesh(new THREE.SphereGeometry(radius, segments, rings), sphereMaterial);
 
     sphere.position.x = cx;
