@@ -477,6 +477,11 @@ var Spline = (function () {
       return bezier;
     };
 
+
+    /*
+     * compute the value of the spline at parameter t (between 1.0 and 1.1)
+     * Returns the Point valie and the index of the spline segment that is being drawn
+     */
     this.value_at = function (t) {
       var si, tt, ss, pi;
       si = Math.floor(t * segments.length);
@@ -620,6 +625,18 @@ var Pattern = (function () {
       }
     };
 
+    this.drawAt = function (scene, t, t2) {
+      var i, s, pi1, pi2;
+      for (i = 0; i < splines.length; i += 1) {
+        s = splines[i];
+        if (s !== null) {
+          pi1 = s.value_at(t);
+          pi2 = s.value_at(t2);
+          G3D.line(scene, pi1.getX(), pi1.getY(), 0, pi2.getX(), pi2.getY(), 0);
+        }
+      }
+    };
+
     this.toString = function () {
       var i, result = "Pattern: { " + splines.length + " splines: [";
       for (i = 0; i < splines.length; i += 1) {
@@ -698,6 +715,10 @@ var Celtic = (function () {
     };
 
     this.getGraph = function () { return this.graph; };
+
+    this.drawAt = function (scene, t, t2) {
+      this.pattern.drawAt(scene, t, t2);
+    };
 
     this.draw = function () {
       var

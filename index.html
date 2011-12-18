@@ -149,11 +149,11 @@
                           kennicott_cluster_size: 10
                          });
      //pattern.getGraph().draw(scene);
-     var group = new THREE.Object3D();
-     pattern.pattern.draw(group, false);
+//     var group = new THREE.Object3D();
+//     pattern.pattern.draw(scene, false);
      //pattern.draw(scene);
 
-     scene.add(group);
+//     scene.add(group);
 
      // create a point light
      var pointLight = new THREE.PointLight( 0xFFFFFF );
@@ -182,16 +182,21 @@
 			//
 
 			function animate() {
-
+				render();        
 				requestAnimationFrame( animate );
-
-				render();
-
 			}
 
       var phi = 0, theta = 0;
+      var t=0, step=0.005;
+
 
 			function render() {
+        /* update scene */
+        if (t < 1) {
+          t2 = (t + step > 1) ? 1 : t + step;
+          pattern.drawAt(scene, t, t2);
+          t = t2;
+        }
 
         phi =  mouseX  * .001;
         theta =  mouseY  * .001;
