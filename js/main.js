@@ -17,6 +17,7 @@ var $, THREE, Celtic, requestAnimationFrame;
     renderer = new THREE.WebGLRenderer(),
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR),
     scene = new THREE.Scene(),
+    mesh = new THREE.Object3D(),
     pointLight = new THREE.PointLight(0xFFFFFF),
     t = 0, t2 = 0, step = 0.005,
     phi, theta;
@@ -25,7 +26,7 @@ var $, THREE, Celtic, requestAnimationFrame;
     /* update scene */
     if (t < 1) {
       t2 = (t + step > 1) ? 1 : t + step;
-      pattern.drawAt(scene, t, t2);
+      pattern.drawAt(mesh, t, t2);
       t = t2;
     }
     phi = mouseX * 0.001;
@@ -50,6 +51,26 @@ var $, THREE, Celtic, requestAnimationFrame;
     mouseY = (event.clientY - windowHalfY) * 10;
   }
 
+  function newPattern() {
+    scene.remove(mesh);
+    mesh = new THREE.Object3D();
+    pattern = new Celtic({type: $("#tabs").tabs().tabs('option', 'selected'),
+                          shape1: $('#slider-shape1').slider('value'),
+                          shape2: $('#slider-shape2').slider('value'),
+                          width: $('#slider-width').slider('value'),
+                          step: $('#slider-step').slider('value'),
+                          margin: $('#slider-margin').slider('value'),
+                          nb_orbits: $('#slider-nb_orbits').slider('value'),
+                          nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
+                          triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
+                          tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
+                          kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
+                          kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
+                         });
+    scene.add(mesh);
+    t = 0;
+  }
+
   $("#tabs").tabs();
   $('#slider-shape1').slider({ value: 0, min: -2, max: 2, step: 0.01 });
   $('#slider-shape2').slider({ value: 0, min: -2, max: 2, step: 0.01 });
@@ -62,6 +83,9 @@ var $, THREE, Celtic, requestAnimationFrame;
   $('#slider-tgrid-edge_size').slider({value: 60, min: 40, max: 200, step: 0.1});
   $('#slider-kennicott-edge_size').slider({value: 80, min: 70, max: 90, step: 0.1});
   $('#slider-kennicott-cluster_size').slider({value: 10, min: 5, max: 30, step: 0.1});
+  $("#go").bind("click", function (event, ui) {
+    newPattern();
+  });
 
   pattern = new Celtic({type: 2,
                         shape1: 1,
@@ -96,6 +120,7 @@ var $, THREE, Celtic, requestAnimationFrame;
 //  pattern.getGraph().draw(scene);
 //  renderer.render(scene, camera);
 
+  scene.add(mesh);
   animate();
   document.addEventListener('mousemove', onDocumentMouseMove, false);
 
@@ -104,21 +129,4 @@ var $, THREE, Celtic, requestAnimationFrame;
 
 
 
-  //         $("#go").bind("click", function(event, ui) {
-  //           pattern = new Celtic({type: $("#tabs").tabs().tabs('option','selected'),
-  //                        shape1: $('#slider-shape1').slider('value'),
-  //                        shape2: $('#slider-shape2').slider('value'),
-  //                        width: $('#slider-width').slider('value'),
-  //                        step: $('#slider-step').slider('value'),
-  //                        margin: $('#slider-margin').slider('value'),
-  //                        nb_orbits: $('#slider-nb_orbits').slider('value'),
-  //                        nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
-  //                        triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
-  //                        tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
-  //                        kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
-  //                        kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
-  //                       });
-  //             pattern.getGraph().draw(scene);
-  //           pattern.draw(scene);
-  //         });
 }());
