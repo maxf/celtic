@@ -63,7 +63,6 @@ var $, THREE, Celtic, requestAnimationFrame;
     scene.remove(mesh);
     mesh = new THREE.Object3D();
     pattern = new Celtic({type: 0});
-    console.log(pattern.toString());
     scene.add(mesh);
     t = 0;
   }
@@ -81,7 +80,6 @@ var $, THREE, Celtic, requestAnimationFrame;
                         kennicott_edge_size: 80,
                         kennicott_cluster_size: 10
                        });
-  console.log(pattern.toString());
   renderer.setSize(WIDTH, HEIGHT);
   $container.append(renderer.domElement);
 
