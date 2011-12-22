@@ -761,8 +761,11 @@ var Celtic = (function () {
     // parameters are set in the UI and have been retrieved in params
     if (params.type === Graph.TYPE_RANDOM) {
       params.type = Math.randomInt(1, 5);
+      params.width = 400;
       switch (params.type) {
       case Graph.TYPE_POLAR:
+        params.shape1 = -Math.randomFloat(-1, 1);
+        params.shape2 = -Math.randomFloat(-1, 1);
         params.nb_orbits = Math.randomInt(2, 11);
         params.nb_nodes_per_orbit = Math.randomInt(4, 13);
         break;
@@ -774,16 +777,17 @@ var Celtic = (function () {
       case Graph.TYPE_KENNICOTT:
         params.shape1 = Math.randomFloat(-1, 1);
         params.shape2 = Math.randomFloat(-1, 1);
-        params.edge_size = Math.randomFloat(70, 90);
+        params.kennicott_edge_size = Math.randomFloat(70, 90);
         params.kennicott_cluster_size = params.edge_size / Math.randomFloat(3, 12) - 1;
         break;
       case Graph.TYPE_TRIANGLE:
-        params.edge_size = Math.randomFloat(60, 100);
-        params.margin = Math.randomFloat(-900, 0);
+        params.shape1 = Math.randomFloat(-1, 1);
+        params.shape2 = Math.randomFloat(-1, 1);
+        params.triangle_edge_size = Math.randomFloat(60, 100);
         break;
       case Graph.TYPE_CUSTOM:
-        params.nb_orbits = Math.randomInt(2, 11);
-        params.nb_nodes_per_orbit = Math.randomInt(4, 13);
+        params.shape1 = Math.randomFloat(-1, 1);
+        params.shape2 = Math.randomFloat(-1, 1);
         break;
       default: console.log("error: graph type out of bounds: " + this.params.type);
       }
@@ -796,5 +800,26 @@ var Celtic = (function () {
 
     colorMode = Const.HSB;
     this.color(Math.randomInt(0, 256), 200, 200);
+
+    this.toString = function () {
+      var output = ["Celtic: {type: " + params.type + ", width: " + params.width + ", height: " + params.height + ", shape1: " + params.shape1 + ", shape2: " + params.shape2 + ", "];
+      switch (params.type) {
+      case Graph.TYPE_POLAR:
+        output.push("nb_orbits: " + params.nb_orbits + ", nb_nodes_per_orbit: " + params.nb_nodes_per_orbit + ". ");
+        break;
+      case Graph.TYPE_TGRID:
+        output.push("tgrid_edge_size: " + params.tgrid_edge_size + ". ");
+        break;
+      case Graph.TYPE_KENNICOTT:
+        output.push("kennicott_edge_size: " + params.kennicott_edge_size + ". kennicott_cluster_size: " + params.kennicott_cluster_size + ". ");
+        break;
+      case Graph.TYPE_TRIANGLE:
+        output.push("triangle_edge_size: " + params.triangle_edge_size + ". ");
+        break;
+      }
+      output.push("}");
+      return output.join("");
+    };
+
   };
 }());

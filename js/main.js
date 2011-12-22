@@ -51,41 +51,22 @@ var $, THREE, Celtic, requestAnimationFrame;
     mouseY = (event.clientY - windowHalfY) * 10;
   }
 
+  function rndInt(min, max) {
+    return Math.floor(Math.random() * (max - min) + min + 1);
+  }
+
+  function rnd(min, max) {
+    return Math.random * (max - min) + min;
+  }
+
   function newPattern() {
     scene.remove(mesh);
     mesh = new THREE.Object3D();
-    pattern = new Celtic({type: $("#tabs").tabs().tabs('option', 'selected'),
-                          shape1: $('#slider-shape1').slider('value'),
-                          shape2: $('#slider-shape2').slider('value'),
-                          width: $('#slider-width').slider('value'),
-                          step: $('#slider-step').slider('value'),
-                          margin: $('#slider-margin').slider('value'),
-                          nb_orbits: $('#slider-nb_orbits').slider('value'),
-                          nb_nodes_per_orbit: $('#slider-nb_nodes_per_orbit').slider('value'),
-                          triangle_edge_size: $('#slider-triangle-edge_size').slider('value'),
-                          tgrid_edge_size: $('#slider-tgrid-edge_size').slider('value'),
-                          kennicott_edge_size: $('#slider-kennicott-edge_size').slider('value'),
-                          kennicott_cluster_size: $('#slider-kennicott-cluster_size').slider('value')
-                         });
+    pattern = new Celtic({type: 0});
+    console.log(pattern.toString());
     scene.add(mesh);
     t = 0;
   }
-
-  $("#tabs").tabs();
-  $('#slider-shape1').slider({ value: 0, min: -2, max: 2, step: 0.01 });
-  $('#slider-shape2').slider({ value: 0, min: -2, max: 2, step: 0.01 });
-  $('#slider-width').slider({ value: 5, min: 1, max: 10, step: 0.1 });
-  $('#slider-step').slider({ value: 0.01, min: 0.01, max: 0.5, step: 0.01 });
-  $('#slider-margin').slider({ value: 0, min: 0, max: 200, step: 1 });
-  $('#slider-nb_orbits').slider({value: 3, min: 2, max: 11, step: 1});
-  $('#slider-nb_nodes_per_orbit').slider({value: 5, min: 4, max: 13, step: 1});
-  $('#slider-triangle-edge_size').slider({value: 80, min: 20, max: 200, step: 0.1});
-  $('#slider-tgrid-edge_size').slider({value: 60, min: 40, max: 200, step: 0.1});
-  $('#slider-kennicott-edge_size').slider({value: 80, min: 70, max: 90, step: 0.1});
-  $('#slider-kennicott-cluster_size').slider({value: 10, min: 5, max: 30, step: 0.1});
-  $("#go").bind("click", function (event, ui) {
-    newPattern();
-  });
 
   pattern = new Celtic({type: 2,
                         shape1: 1,
@@ -100,7 +81,7 @@ var $, THREE, Celtic, requestAnimationFrame;
                         kennicott_edge_size: 80,
                         kennicott_cluster_size: 10
                        });
-
+  console.log(pattern.toString());
   renderer.setSize(WIDTH, HEIGHT);
   $container.append(renderer.domElement);
 
@@ -116,17 +97,9 @@ var $, THREE, Celtic, requestAnimationFrame;
   pointLight.position.z = 130;
   scene.add(pointLight);
 
-
-//  pattern.getGraph().draw(scene);
-//  renderer.render(scene, camera);
-
   scene.add(mesh);
   animate();
   document.addEventListener('mousemove', onDocumentMouseMove, false);
-
-
-
-
-
+  $container.click(function () { newPattern(); });
 
 }());
