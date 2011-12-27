@@ -8,7 +8,7 @@ var $, THREE, Celtic, requestAnimationFrame;
     mouseX = 0, mouseY = 0,
     windowHalfX = window.innerWidth / 2,
     windowHalfY = window.innerHeight / 2,
-    WIDTH = 800, HEIGHT = 800,
+    WIDTH = window.innerWidth, HEIGHT = window.innerHeight,
     VIEW_ANGLE = 45,
     ASPECT = WIDTH / HEIGHT,
     NEAR = 0.1,
