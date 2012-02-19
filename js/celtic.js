@@ -455,6 +455,7 @@ var PointIndex = (function () {
   return function (x, y, i) {
     this.getX = function () { return x; };
     this.getY = function () { return y; };
+    this.getZ = function () { return 0; };
     this.getIndex = function () { return i; };
     this.toString = function () { return "PointIndex {x: " + x + ", y: " + y + ", index: " + i + "}"; };
   };
@@ -480,7 +481,7 @@ var Spline = (function () {
 
     /*
      * compute the value of the spline at parameter t (between 1.0 and 1.1)
-     * Returns the Point valie and the index of the spline segment that is being drawn
+     * Returns the Point value and the index of the spline segment that is being drawn
      */
     this.value_at = function (t) {
       var si, tt, ss, pi;
@@ -506,7 +507,8 @@ var Spline = (function () {
           pEnd = this.value_at(t + 0.001);
           G3D.line(scene,
                    pStart.getX(), pStart.getY(), 0,
-                   pEnd.getX(), pEnd.getY(), 0);
+                   pEnd.getX(), pEnd.getY(), 0,
+                   0xAA0000);
         }
       }
     };
@@ -619,6 +621,11 @@ var Pattern = (function () {
         return ed; // possibly null if no edge found
       };
 
+    // public functions
+    this.splines = function () {
+      return splines;
+    };
+
     this.draw = function (scene, justTheControlPoints) {
       for (i = 0; i < splines.length; i += 1) {
         splines[i].draw(scene, justTheControlPoints);
@@ -632,7 +639,7 @@ var Pattern = (function () {
         if (s !== null) {
           pi1 = s.value_at(t);
           pi2 = s.value_at(t2);
-          G3D.line(scene, pi1.getX(), pi1.getY(), 0, pi2.getX(), pi2.getY(), 0);
+          G3D.line(scene, pi1.getX(), pi1.getY(), 0, pi2.getX(), pi2.getY(), 0, 0xAA9999);
         }
       }
     };

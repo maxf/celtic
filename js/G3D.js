@@ -1,17 +1,17 @@
 /*jslint devel: true, browser: true, maxerr: 50, indent: 2 */
 var THREE, G3D = {
-  line: function (scene, x1, y1, z1, x2, y2, z2) {
+  line: function (scene, x1, y1, z1, x2, y2, z2, color) {
     "use strict";
 
     var
       radiusTop = 10,
       radiusBottom = 10,
       height =  Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1) + (z2 - z1) * (z2 - z1)),
-      cylinderMaterial = new THREE.MeshBasicMaterial({color : 0xAAAACC, wireframe: true}),
-//      cylinderMaterial = new THREE.MeshLambertMaterial({color : 0xAAAACC}),
-      segmentsRadius = 3,
-      segmentsHeight = 1,
-      openEnded = true,
+//      cylinderMaterial = new THREE.MeshBasicMaterial({color : color || 0xAAAACC, wireframe: true}),
+      cylinderMaterial = new THREE.MeshLambertMaterial({color : color || 0xAAAACC}),
+      segmentsRadius = 10,
+      segmentsHeight = 5,
+      openEnded = false,
       cylinder = new THREE.Mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, segmentsRadius, segmentsHeight, openEnded), cylinderMaterial);
 
     cylinder.position.x = (x1 + x2) / 2;
