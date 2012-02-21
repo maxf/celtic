@@ -4,7 +4,7 @@ var $, THREE, Celtic, requestAnimationFrame;
   "use strict";
 
   var
-    pattern,
+    celtic,
     mouseX = 0, mouseY = 0,
     windowHalfX = window.innerWidth / 2,
     windowHalfY = window.innerHeight / 2,
@@ -17,6 +17,7 @@ var $, THREE, Celtic, requestAnimationFrame;
     renderer = new THREE.WebGLRenderer(),
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR),
     scene = new THREE.Scene(),
+    graphObject,
 //    mesh = new THREE.Object3D(),
 
     particleSetCount = 3000,
@@ -30,7 +31,7 @@ var $, THREE, Celtic, requestAnimationFrame;
 
   function render() {
     /* update scene */
-    var i, j, pointIndexAlongPattern, splines = pattern.pattern.splines(), particle;
+    var i, j, pointIndexAlongPattern, splines = celtic.pattern.splines(), particle;
 
 
 
@@ -75,38 +76,34 @@ var $, THREE, Celtic, requestAnimationFrame;
   }
 
   function rnd(min, max) {
-    return Math.random * (max - min) + min;
+    return Math.random() * (max - min) + min;
   }
 
   function newPattern() {
     var pX, pY, pZ, particle, pointIndexAlongPattern, i, j, splines, pOffsetX, pOffsetY, pOffsetZ, maxOffset;
-//    pattern = new Celtic({type: 0});
-    pattern = new Celtic({type: 2,
-                        shape1: 1,
-                        shape2: 1,
-                        width: 400,
-                        step: 0.1,
-                        margin: 0,
-                        nb_orbits: 2,
-                        nb_nodes_per_orbit: 3,
-                        triangle_edge_size: 100,
-                        tgrid_edge_size: 200,
-                        kennicott_edge_size: 80,
-                        kennicott_cluster_size: 10
-                       });
 
-    splines = pattern.pattern.splines();
-    numParticleSets = splines.length;
-    particleSets = [];
-    particleSystems = [];
-
+    // remove previous particles
     for (i = 0; i < numParticleSets; i += 1) {
       scene.remove(particleSystems[i]);
     }
 
+
+    celtic = new Celtic({type: 2, // triangle
+                         triangle_edge_size: 200,
+                         width: rndInt(500, 1000),
+                         shape1: rnd(0.2, 0.7),
+                         shape2: rnd(0.2, 0.7)
+                       });
+
+    splines = celtic.pattern.splines();
+    numParticleSets = splines.length;
+    particleSets = [];
+    particleSystems = [];
+
+
 //    scene.remove(mesh);
 //    mesh = new THREE.Object3D();
-//    pattern = new Celtic({type: 0});
+//    celtic = new Celtic({type: 0});
 //    scene.add(mesh);
 
     for (i = 0; i < numParticleSets; i += 1) {
@@ -124,7 +121,7 @@ var $, THREE, Celtic, requestAnimationFrame;
         pZ = pointIndexAlongPattern.getZ() + pOffsetZ;
         particle = new THREE.Vertex(new THREE.Vector3(pX, pY, pZ));
         particle.celticT = 0;
-        particle.velocity = Math.random() * 0.0005 + 0.00003;
+        particle.velocity = Math.random() * 0.0005 + 0.002;
 //        particle.radialPosition = Math.random() * 2 * Math.PI;
 //        particle.distanceFromCurve = Math.random() * 0.0001;
         particle.offsetX = pOffsetX;
@@ -148,11 +145,18 @@ var $, THREE, Celtic, requestAnimationFrame;
       particleSystems[i] = new THREE.ParticleSystem(particleSets[i], particleMaterials[i]);
       particleSystems[i].sortParticles = true;
       scene.add(particleSystems[i]);
+
+      // show the pattern's graph
+//      scene.remove(graphObject);
+//      graphObject = new THREE.Object3D();
+//      celtic.graph.draw(graphObject, true);
+//      scene.add(graphObject);
+
     }
   }
 
 
-//  pattern = new Celtic({type: 2,
+//  celtic = new Celtic({type: 2,
 //                        shape1: 1,
 //                        shape2: 2,
 //                        width: 400,
