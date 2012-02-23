@@ -88,12 +88,66 @@ var $, THREE, Celtic, requestAnimationFrame;
     }
 
 
-    celtic = new Celtic({type: 2, // triangle
-                         triangle_edge_size: 200,
-                         width: rndInt(500, 1000),
-                         shape1: rnd(0.2, 0.7),
-                         shape2: rnd(0.2, 0.7)
-                       });
+//    celtic = new Celtic({type: 2, // triangle
+//                         triangle_edge_size: 400,
+//                         width: 1000,
+//                         shape1: rnd(0.2, 0.7),
+//                         shape2: rnd(0.2, 0.7)
+//                       });
+
+//     celtic = new Celtic({type: 3, // polar
+//                          width: rndInt(500, 1000),
+//                          shape1: rnd(0.2, 0.7),
+//                          shape2: rnd(0.2, 0.7),
+//                          nb_orbits: rndInt(2, 6),
+//                          nb_nodes_per_orbit: rndInt(4, 6)
+//
+//                        });
+
+
+    switch (rndInt(0, 4)) {
+    case 0: celtic = new Celtic({type: 2,
+                                 width: 1000,
+                                 shape1: 0.44411347496788944,
+                                 shape2: 0.6253803435713052,
+                                 triangle_edge_size: 400 });
+      break;
+    case 1: celtic = new Celtic({type: 2,
+                                 width: 1000,
+                                 shape1: 0.6336356894345954,
+                                 shape2: 0.2955334258032963,
+                                 triangle_edge_size: 200 });
+      break;
+    case 2: celtic = new Celtic({type: 2,
+                                 width: 809,
+                                 shape1: 0.3608018645783886,
+                                 shape2: 0.3309578502550721,
+                                 triangle_edge_size: 200 });
+      break;
+    case 3: celtic = new Celtic({type: 3,
+                                 width: 913,
+                                 shape1: 0.3309578502550721,
+                                 shape2: 0.4517052139155566,
+                                 nb_orbits: 4,
+                                 nb_nodes_per_orbit: 6
+                                });
+      break;
+    case 4: celtic = new Celtic({type: 3,
+                                 width: 582,
+                                 shape1: 0.6740786361508071,
+                                 shape2: 0.31236367537640036,
+                                 nb_orbits: 4,
+                                 nb_nodes_per_orbit: 6
+                                });
+      break;
+    case 5: celtic = new Celtic({type: 3,
+                                 width: 631,
+                                 shape1: 0.32047362851444633,
+                                 shape2: 0.550755528663285,
+                                 nb_orbits: 4,
+                                 nb_nodes_per_orbit: 6
+                                });
+    }
 
     splines = celtic.pattern.splines();
     numParticleSets = splines.length;
